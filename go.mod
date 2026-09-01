@@ -13,7 +13,7 @@ require (
 	github.com/mafredri/cdp v0.35.0
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.12.1
-	github.com/websummoner/ggr v0.0.0-20241217115549-5adb7fc43fdb
+	github.com/websummoner/ggr v0.0.0-20260901194351-53394021ba2e
 	golang.org/x/net v0.58.0
 )
 
@@ -42,11 +42,8 @@ require (
 	go.opentelemetry.io/otel/metric v1.46.0 // indirect
 	go.opentelemetry.io/otel/trace v1.46.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
-	golang.org/x/mod v0.40.0
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
 	gotest.tools/v3 v3.5.1 // indirect
 )
-
-replace github.com/websummoner/ggr => ../ggr
