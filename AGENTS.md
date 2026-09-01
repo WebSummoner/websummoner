@@ -26,13 +26,13 @@ Two commitments shape most decisions:
 
 ## Workspace layout
 
-WebSummoner is eight sibling repositories, not a monorepo. Go modules resolve
-each other through `replace` directives pointing at siblings, so a checkout of
-one repository alone will not build.
+WebSummoner is eight sibling repositories, not a monorepo. Each one is a
+self-contained Go module that builds on its own — cross-repo dependencies are
+resolved from published pseudo-versions, not `replace` directives.
 
 ```
 websummoner/                 the hub (this repository)
-ggr/                         load balancer — the hub replaces its module path with ../ggr
+ggr/                         load balancer — the hub and ggr-ui depend on it
 ggr-ui/                      ggr's UI
 websummoner-ui/              the session UI (React app embedded into a Go binary)
 images/                      browser image Dockerfiles + the Go build tool
@@ -41,16 +41,19 @@ websummoner-container-tests/ the JUnit 5 cross-browser suite
 websummoner-website/         the marketing site
 ```
 
-Consequence: mount the **workspace root** into build containers and set the
-working directory to the subproject.
+Mounting a single repository is enough:
 
 ```bash
-# correct — from the workspace root
-docker run --rm -v "$PWD":/ws -w /ws/websummoner golang:1.27 go build -buildvcs=false ./...
-
-# wrong — "no Go files"; $PWD is already the subproject
-cd websummoner && docker run --rm -v "$PWD":/ws -w /ws/websummoner golang:1.27 go build ./...
+docker run --rm -v "$PWD":/app -w /app golang:1.27 go build -buildvcs=false ./...
 ```
+
+Mounting the workspace root also works, but the working directory must then be
+the subproject — `-v "$PWD":/ws -w /ws/websummoner` from the **workspace root**,
+not from inside `websummoner/`, which gives "no Go files".
+
+:warning: Do not reintroduce a `replace` directive pointing at a sibling. It
+works locally and breaks CI, which clones one repository: `replacement
+directory ../ggr does not exist`. This bit three repositories at once.
 
 ## The toolchain is dockerised on purpose
 

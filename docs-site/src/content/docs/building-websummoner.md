@@ -10,35 +10,34 @@ default). **No Go installation is needed on your machine — only Docker.**
 
 ## Everyday commands
 
-Run each task in the pinned Go container. The **whole workspace** is mounted,
-not just this repository — `go.mod` has a `replace` pointing at the sibling
-`../ggr` checkout, so a single-repo mount fails to resolve it.
+Run each task in the pinned Go container. This repository is a self-contained
+Go module, so mounting it alone is enough.
 
 Compile for your platform:
 
 ```bash
-docker run --rm -v "$PWD/..":/ws -w /ws/websummoner golang:1.27-trixie \
+docker run --rm -v "$PWD":/app -w /app golang:1.27-trixie \
     go build -buildvcs=false -o dist/websummoner .
 ```
 
 Run the tests, with the same build tags CI uses:
 
 ```bash
-docker run --rm -v "$PWD/..":/ws -w /ws/websummoner golang:1.27-trixie \
+docker run --rm -v "$PWD":/app -w /app golang:1.27-trixie \
     go test -tags 's3 metadata' -race ./...
 ```
 
 Vet and check formatting:
 
 ```bash
-docker run --rm -v "$PWD/..":/ws -w /ws/websummoner golang:1.27-trixie \
+docker run --rm -v "$PWD":/app -w /app golang:1.27-trixie \
     bash -c 'go vet ./... && test -z "$(gofmt -l .)"'
 ```
 
 Lint with the project's configuration:
 
 ```bash
-docker run --rm -v "$PWD/..":/ws -w /ws/websummoner golangci/golangci-lint:latest \
+docker run --rm -v "$PWD":/app -w /app golangci/golangci-lint:latest \
     golangci-lint run ./...
 ```
 
@@ -49,7 +48,7 @@ for tagged releases — so released binaries always come from one place. To
 reproduce a release build locally, run that script in the container:
 
 ```bash
-docker run --rm -v "$PWD/..":/ws -w /ws/websummoner golang:1.27-trixie ci/build.sh
+docker run --rm -v "$PWD":/app -w /app golang:1.27-trixie ci/build.sh
 ```
 
 Then build the image from the linux binary for your architecture:

@@ -15,11 +15,11 @@ git clone https://github.com/WebSummoner/websummoner.git
 cd websummoner
 
 # tests, with the build tags CI uses
-docker run --rm -v "$PWD/..":/ws -w /ws/websummoner golang:1.27-trixie \
+docker run --rm -v "$PWD":/app -w /app golang:1.27-trixie \
     go test -tags 's3 metadata' -race ./...
 
 # vet and formatting
-docker run --rm -v "$PWD/..":/ws -w /ws/websummoner golang:1.27-trixie \
+docker run --rm -v "$PWD":/app -w /app golang:1.27-trixie \
     bash -c 'go vet ./... && test -z "$(gofmt -l .)"'
 ```
 

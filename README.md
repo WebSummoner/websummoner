@@ -60,10 +60,9 @@ Complete reference guide (including building instructions) lives at [websummoner
 
 Building requires **only Docker** — no Go installation on your machine:
 ```
-$ docker run --rm -v "$PWD/..":/ws -w /ws/websummoner golang:1.27-trixie \
+$ docker run --rm -v "$PWD":/app -w /app golang:1.27-trixie \
       go test -tags 's3 metadata' -race ./...
 ```
-The whole workspace is mounted because `go.mod` replaces `github.com/websummoner/ggr` with the sibling `../ggr` checkout.
 
 ## Migrating from Selenoid
 
