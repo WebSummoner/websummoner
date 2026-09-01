@@ -1,11 +1,11 @@
 package upload
 
 import (
-	"github.com/aerokube/selenoid/info"
+	"github.com/websummoner/websummoner/info"
 	"log"
 	"time"
 
-	"github.com/aerokube/selenoid/event"
+	"github.com/websummoner/websummoner/event"
 )
 
 var (

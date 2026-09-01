@@ -1,6 +1,7 @@
 .idea
 *.iml
-selenoid
-selenoid.exe
+websummoner
+websummoner.exe
 coverage.*
 .DS_Store
+dist/

@@ -1,0 +1,31 @@
+---
+// Starlight doesn't ship a footer — this adds the RIADVICE copyright line.
+const { path } = Astro.props.starlightRoute ?? {};
+---
+
+<footer class="ws-footer">
+  <div class="ws-footer-inner">
+    <span>&copy; 2026 <a href="https://riadvice.com">RIADVICE</a></span>
+    <span class="ws-footer-sep">·</span>
+    <span>Derived from Selenoid (Apache-2.0)</span>
+  </div>
+</footer>
+
+<style>
+  .ws-footer {
+    border-top: 1px solid var(--sl-color-gray-6);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--sl-color-gray-3);
+  }
+  .ws-footer a {
+    color: var(--ws-brand, #1b355e);
+    font-weight: 500;
+    text-decoration: none;
+  }
+  :root[data-theme="dark"] .ws-footer a {
+    color: var(--ws-brand, #93b3e6);
+  }
+  .ws-footer-sep { margin: 0 0.5rem; opacity: 0.5; }
+</style>

@@ -1,0 +1,9 @@
+---
+import StarlightHero from '@astrojs/starlight/components/Hero.astro';
+
+const { frontmatter } = Astro.props;
+---
+
+<StarlightHero {...(frontmatter?.hero ?? {})}>
+    <span slot="title" class="ws-wordmark"><span class="ws-web">Web</span>Summoner</span>
+</StarlightHero>

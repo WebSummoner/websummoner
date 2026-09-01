@@ -1,0 +1,31 @@
+# golangci-lint configuration.
+#
+# Runs in CI and gates the build. The full default set is enabled and the
+# tree passes it.
+version: "2"
+
+linters:
+  default: none
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - ineffassign
+    - misspell
+    - unused
+
+  settings:
+    govet:
+      # `composites` flags unkeyed literals of third-party structs. Every hit
+      # is the aandryashin/matchers test helper, whose whole API is positional.
+      disable:
+        - composites
+
+  exclusions:
+    presets:
+      - common-false-positives
+      - std-error-handling
+
+formatters:
+  enable:
+    - gofmt

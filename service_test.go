@@ -13,12 +13,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aerokube/selenoid/config"
-	"github.com/aerokube/selenoid/service"
-	"github.com/aerokube/selenoid/session"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	assert "github.com/stretchr/testify/require"
+	"github.com/websummoner/websummoner/config"
+	"github.com/websummoner/websummoner/service"
+	"github.com/websummoner/websummoner/session"
 	"golang.org/x/net/websocket"
 )
 
@@ -196,7 +196,7 @@ func testConfig(env *service.Environment) *config.Config {
 		Default: "33.0",
 		Versions: map[string]*config.Browser{
 			"33.0": {
-				Image:   "selenoid/firefox:33.0",
+				Image:   "websummoner/firefox:33.0",
 				Tmpfs:   map[string]string{"/tmp": "size=128m"},
 				Port:    p,
 				Volumes: []string{"/test:/test"},
@@ -228,7 +228,7 @@ func testEnvironment() *service.Environment {
 		Network:             containerNetwork,
 		StartupTimeout:      serviceStartupTimeout,
 		CaptureDriverLogs:   captureDriverLogs,
-		VideoContainerImage: "aerokube/video-recorder",
+		VideoContainerImage: "websummoner/video-recorder",
 		VideoOutputDir:      "/some/dir",
 		LogOutputDir:        logOutputDir,
 		Privileged:          false,
@@ -388,7 +388,7 @@ func readDataFromWebSocket(t *testing.T, wsURL string) string {
 	assert.NoError(t, err)
 
 	var msg = make([]byte, 512)
-	_, err = ws.Read(msg)
+	_, _ = ws.Read(msg)
 	msg = bytes.Trim(msg, "\x00")
 	//assert.NoError(t, err)
 	return string(msg)

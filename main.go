@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/aerokube/selenoid/info"
 	"github.com/docker/docker/api"
+	"github.com/websummoner/websummoner/info"
 	"log"
 	"net"
 	"net/http"
@@ -19,15 +19,15 @@ import (
 	"syscall"
 	"time"
 
-	ggr "github.com/aerokube/ggr/config"
-	"github.com/aerokube/selenoid/config"
-	"github.com/aerokube/selenoid/jsonerror"
-	"github.com/aerokube/selenoid/protect"
-	"github.com/aerokube/selenoid/service"
-	"github.com/aerokube/selenoid/session"
-	"github.com/aerokube/selenoid/upload"
 	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
+	ggr "github.com/websummoner/ggr/config"
+	"github.com/websummoner/websummoner/config"
+	"github.com/websummoner/websummoner/jsonerror"
+	"github.com/websummoner/websummoner/protect"
+	"github.com/websummoner/websummoner/service"
+	"github.com/websummoner/websummoner/session"
+	"github.com/websummoner/websummoner/upload"
 	"golang.org/x/net/websocket"
 )
 
@@ -88,10 +88,10 @@ func init() {
 	flag.Var(&mem, "mem", "Containers memory limit e.g. 128m or 1g")
 	flag.Var(&cpu, "cpu", "Containers cpu limit as float e.g. 0.2 or 1.0")
 	flag.StringVar(&containerNetwork, "container-network", service.DefaultContainerNetwork, "Network to be used for containers")
-	flag.BoolVar(&captureDriverLogs, "capture-driver-logs", false, "Whether to add driver process logs to Selenoid output")
+	flag.BoolVar(&captureDriverLogs, "capture-driver-logs", false, "Whether to add driver process logs to WebSummoner output")
 	flag.BoolVar(&disablePrivileged, "disable-privileged", false, "Whether to disable privileged container mode")
 	flag.StringVar(&videoOutputDir, "video-output-dir", "video", "Directory to save recorded video to")
-	flag.StringVar(&videoRecorderImage, "video-recorder-image", "selenoid/video-recorder:latest-release", "Image to use as video recorder")
+	flag.StringVar(&videoRecorderImage, "video-recorder-image", "websummoner/video-recorder:latest-release", "Image to use as video recorder")
 	flag.StringVar(&logOutputDir, "log-output-dir", "", "Directory to save session log to")
 	flag.BoolVar(&saveAllLogs, "save-all-logs", false, "Whether to save all logs without considering capabilities")
 	flag.DurationVar(&gracefulPeriod, "graceful-period", 300*time.Second, "graceful shutdown period in time.Duration format, e.g. 300s or 500ms")
@@ -133,7 +133,7 @@ func init() {
 		if err != nil {
 			log.Fatalf("[-] [INIT] [Invalid video output dir %s: %v]", videoOutputDir, err)
 		}
-		err = os.MkdirAll(videoOutputDir, os.FileMode(0644))
+		err = os.MkdirAll(videoOutputDir, os.FileMode(0755))
 		if err != nil {
 			log.Fatalf("[-] [INIT] [Failed to create video output dir %s: %v]", videoOutputDir, err)
 		}
@@ -144,7 +144,7 @@ func init() {
 		if err != nil {
 			log.Fatalf("[-] [INIT] [Invalid log output dir %s: %v]", logOutputDir, err)
 		}
-		err = os.MkdirAll(logOutputDir, os.FileMode(0644))
+		err = os.MkdirAll(logOutputDir, os.FileMode(0755))
 		if err != nil {
 			log.Fatalf("[-] [INIT] [Failed to create log output dir %s: %v]", logOutputDir, err)
 		}
@@ -227,6 +227,8 @@ func createCompatibleDockerClient(onVersionSpecified, onVersionDetermined, onUsi
 				_ = docker.Close()
 			}
 		}
+		// let the client negotiate: the probe loop left the version at the minimum
+		_ = os.Unsetenv(dockerApiVersion)
 		onUsingDefaultVersion(api.DefaultVersion)
 	}
 	return client.NewClientWithOpts(client.FromEnv)
@@ -273,7 +275,7 @@ func parseGgrHost(s string) *ggr.Host {
 }
 
 func onSIGHUP(fn func()) {
-	sig := make(chan os.Signal)
+	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP)
 	go func() {
 		for {
@@ -309,8 +311,15 @@ func post(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func ping(w http.ResponseWriter, _ *http.Request) {
+func ping(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
+	// Kubernetes liveness probes and load balancer health checks send HEAD;
+	// Go's net/http discards the body for HEAD but still needs the handler
+	// to run to completion to produce a 200.
+	if r.Method == http.MethodHead {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	_ = json.NewEncoder(w).Encode(struct {
 		Uptime         string `json:"uptime"`
 		LastReloadTime string `json:"lastReloadTime"`
@@ -338,6 +347,11 @@ func video(w http.ResponseWriter, r *http.Request) {
 func deleteFileIfExists(requestId uint64, w http.ResponseWriter, r *http.Request, dir string, prefix string, status string) {
 	user, remote := info.RequestInfo(r)
 	fileName := strings.TrimPrefix(r.URL.Path, prefix)
+	// defense in depth: ServeMux already cleans the path
+	if !isSafeFileName(fileName) {
+		http.Error(w, fmt.Sprintf("Invalid file name %s", fileName), http.StatusBadRequest)
+		return
+	}
 	filePath := filepath.Join(dir, fileName)
 	_, err := os.Stat(filePath)
 	if err != nil {
@@ -353,7 +367,7 @@ func deleteFileIfExists(requestId uint64, w http.ResponseWriter, r *http.Request
 }
 
 var paths = struct {
-	Video, VNC, Logs, Devtools, Download, Clipboard, File, Ping, Status, Error, WdHub, Welcome string
+	Video, VNC, Logs, Devtools, Download, Clipboard, File, Ping, Metrics, Status, Error, WdHub, Welcome string
 }{
 	Video:     "/video/",
 	VNC:       "/vnc/",
@@ -364,6 +378,7 @@ var paths = struct {
 	Status:    "/status",
 	File:      "/file",
 	Ping:      "/ping",
+	Metrics:   "/metrics",
 	Error:     "/error",
 	WdHub:     "/wd/hub",
 	Welcome:   "/",
@@ -383,9 +398,20 @@ func handler() http.Handler {
 	})
 	root.HandleFunc(paths.Status, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
+		// Readiness probes send HEAD; answer without a body.
+		if r.Method == http.MethodHead {
+			ready := limit > sessions.Len()
+			if ready {
+				w.WriteHeader(http.StatusOK)
+			} else {
+				w.WriteHeader(http.StatusServiceUnavailable)
+			}
+			return
+		}
 		_ = json.NewEncoder(w).Encode(conf.State(sessions, limit, queue.Queued(), queue.Pending()))
 	})
 	root.HandleFunc(paths.Ping, ping)
+	root.HandleFunc(paths.Metrics, metricsHandler(queue))
 	root.Handle(paths.VNC, websocket.Handler(vnc))
 	root.HandleFunc(paths.Logs, logs)
 	root.HandleFunc(paths.Video, video)
@@ -405,10 +431,17 @@ func showVersion() {
 }
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatalf("[-] [INIT] [Failed to start: %v]", err)
+	}
+}
+
+// run blocks until SIGINT/SIGTERM, then shuts down gracefully.
+func run() error {
 	log.Printf("[-] [INIT] [Timezone: %s]", time.Local)
 	log.Printf("[-] [INIT] [Listening on %s]", listen)
 
-	stop := make(chan os.Signal)
+	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 
 	server := &http.Server{
@@ -421,7 +454,7 @@ func main() {
 	}()
 	select {
 	case err := <-e:
-		log.Fatalf("[-] [INIT] [Failed to start: %v]", err)
+		return fmt.Errorf("listen and serve: %w", err)
 	case <-stop:
 	}
 
@@ -429,7 +462,7 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), gracefulPeriod)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
-		log.Fatalf("[-] [SHUTTING_DOWN] [Failed to shut down: %v]", err)
+		return fmt.Errorf("shutdown: %w", err)
 	}
 
 	sessions.Each(func(k string, s *session.Session) {
@@ -442,7 +475,8 @@ func main() {
 	if !disableDocker {
 		err := cli.Close()
 		if err != nil {
-			log.Fatalf("[-] [SHUTTING_DOWN] [Error closing Docker client: %v]", err)
+			return fmt.Errorf("close Docker client: %w", err)
 		}
 	}
+	return nil
 }

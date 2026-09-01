@@ -1,0 +1,101 @@
+---
+title: Welcome
+description: A fast Selenium hub that launches browsers in Docker containers. Developed by RIADVICE.
+template: splash
+hero:
+  title: WebSummoner
+  tagline: A fast Selenium hub that launches browsers in Docker containers.
+  image:
+    file: ../../assets/websummoner-hero.png
+  actions:
+    - text: Get started in 5 minutes
+      link: quick-start/
+      variant: primary
+    - text: Migrating from Selenoid?
+      link: migrating-from-selenoid/
+      variant: secondary
+    - text: GitHub
+      icon: github
+      link: https://github.com/WebSummoner/websummoner
+      variant: minimal
+---
+
+import { CardGrid, Card } from '@astrojs/starlight/components';
+import riadviceLogoDark from '../../assets/riadvice-logo.svg';
+import riadviceLogoLight from '../../assets/riadvice-logo-color.svg';
+
+<div class="maintainer-banner">
+  <img class="logo-dark" src={riadviceLogoDark.src ?? riadviceLogoDark} alt="RIADVICE" style="height:44px;width:auto" />
+  <img class="logo-light" src={riadviceLogoLight.src ?? riadviceLogoLight} alt="RIADVICE" style="height:44px;width:auto" />
+  <p>
+    <strong>RIADVICE</strong> develops and maintains WebSummoner.
+    Support, development and releases are handled by
+    <a href="https://riadvice.com">riadvice.com</a>.
+  </p>
+</div>
+
+WebSummoner is a drop-in Selenium hub implementation written in Go. It reads a
+small JSON file describing which browser images to launch, starts a container
+per test session, and proxies the WebDriver protocol to it.
+
+**Why people use it:**
+
+- **Lightweight** — a single ~10 MB static binary, no Java, roughly 10× less
+  memory than a Selenium server under the same load.
+- **Fully containerized browsers** — every session gets an isolated,
+  reproducible environment with an exact browser version.
+- **Built for testing workflows** — video recording with sound, per-session
+  logs, live screen viewing (VNC), clipboard and file exchange, DevTools
+  protocol access.
+- **Observability built in** — a `/status` endpoint and Prometheus metrics
+  at `/metrics` covering sessions, queue depth and per-browser usage.
+- **Selenium-compatible** — point your existing tests at
+  `http://localhost:4444/wd/hub` and they just work.
+
+WebSummoner is developed and maintained by
+[RIADVICE](https://riadvice.com) — a Selenium hub updated for current Go
+toolchains and modern browser images.
+
+## Where to go next
+
+<CardGrid>
+  <Card title="Quick start" icon="rocket">
+    Run your first containerized browser session in five minutes — with or
+    without [Configuration Manager](https://github.com/WebSummoner/cm).
+    <a href="/quick-start/">Start here →</a>
+  </Card>
+  <Card title="Capabilities reference" icon="setting">
+    Everything you can pass in `websummoner:options` — video, VNC, screen
+    resolution, limits and more, in one table.
+    <a href="/reference/capabilities/">All capabilities →</a>
+  </Card>
+  <Card title="Browsers configuration" icon="document">
+    The `browsers.json` file explained field by field, with a realistic
+    multi-version example.
+    <a href="/reference/browsers-config/">Configure browsers →</a>
+  </Card>
+  <Card title="Video, logs & VNC" icon="seti:video">
+    Record sessions to H.264 video with sound, capture logs, watch the live
+    browser screen.
+    <a href="/guides/video-recording/">Guides →</a>
+  </Card>
+  <Card title="Compare with alternatives" icon="puzzle">
+    An honest comparison with Selenoid, Selenium Grid, Playwright and
+    Puppeteer — including when to choose them instead.
+    <a href="/reference/compare/">See the comparison →</a>
+  </Card>
+</CardGrid>
+
+## The 30-second tour
+
+1. Start WebSummoner (Docker path):
+
+   ```bash
+   docker run -d --name websummoner -p 4444:4444 \
+       -v $PWD/browsers.json:/etc/websummoner/browsers.json:ro \
+       -v /var/run/docker.sock:/var/run/docker.sock \
+       websummoner/websummoner:latest
+   ```
+
+2. Point your tests at `http://localhost:4444/wd/hub`.
+3. Open [http://localhost:4444/status](http://localhost:4444/status) to see it working.

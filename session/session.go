@@ -5,22 +5,33 @@ import (
 	"sync"
 	"time"
 
-	"github.com/imdario/mergo"
+	"dario.cat/mergo"
 )
+
+// Proxy - the W3C proxy capability, as far as WebSummoner needs it.
+type Proxy struct {
+	Type      string   `json:"proxyType,omitempty"`
+	HTTPProxy string   `json:"httpProxy,omitempty"`
+	SSLProxy  string   `json:"sslProxy,omitempty"`
+	NoProxy   []string `json:"noProxy,omitempty"`
+}
 
 // Caps - user capabilities
 type Caps struct {
-	Name                  string            `json:"browserName,omitempty"`
-	DeviceName            string            `json:"deviceName,omitempty"`
-	Version               string            `json:"version,omitempty"`
-	W3CVersion            string            `json:"browserVersion,omitempty"`
-	Platform              string            `json:"platform,omitempty"`
-	W3CPlatform           string            `json:"platformName,omitempty"`
-	W3CDeviceName         string            `json:"appium:deviceName,omitempty"`
-	ScreenResolution      string            `json:"screenResolution,omitempty"`
-	Skin                  string            `json:"skin,omitempty"`
-	VNC                   bool              `json:"enableVNC,omitempty"`
-	Video                 bool              `json:"enableVideo,omitempty"`
+	Name             string `json:"browserName,omitempty"`
+	DeviceName       string `json:"deviceName,omitempty"`
+	Version          string `json:"version,omitempty"`
+	W3CVersion       string `json:"browserVersion,omitempty"`
+	Platform         string `json:"platform,omitempty"`
+	W3CPlatform      string `json:"platformName,omitempty"`
+	W3CDeviceName    string `json:"appium:deviceName,omitempty"`
+	ScreenResolution string `json:"screenResolution,omitempty"`
+	Skin             string `json:"skin,omitempty"`
+	VNC              bool   `json:"enableVNC,omitempty"`
+	Video            bool   `json:"enableVideo,omitempty"`
+	// Audio controls the audio track of video recordings. Nil means enabled,
+	// preserving the historical automatic behavior.
+	Audio                 *bool             `json:"enableAudio,omitempty"`
 	Log                   bool              `json:"enableLog,omitempty"`
 	VideoName             string            `json:"videoName,omitempty"`
 	VideoScreenSize       string            `json:"videoScreenSize,omitempty"`
@@ -38,7 +49,11 @@ type Caps struct {
 	Labels                map[string]string `json:"labels,omitempty"`
 	SessionTimeout        string            `json:"sessionTimeout,omitempty"`
 	S3KeyPattern          string            `json:"s3KeyPattern,omitempty"`
+	Proxy                 *Proxy            `json:"proxy,omitempty"`
 	ExtensionCapabilities *Caps             `json:"selenoid:options,omitempty"`
+	// WebSummonerOptions is the renamed vendor capability block; when both are
+	// present its values win.
+	WebSummonerOptions *Caps `json:"websummoner:options,omitempty"`
 }
 
 func (c *Caps) ProcessExtensionCapabilities() {
@@ -53,8 +68,16 @@ func (c *Caps) ProcessExtensionCapabilities() {
 	}
 
 	if c.ExtensionCapabilities != nil {
-		mergo.Merge(c, *c.ExtensionCapabilities, mergo.WithOverride) //We probably need to handle returned error
+		// Cannot fail: both sides are Caps structs.
+		_ = mergo.Merge(c, *c.ExtensionCapabilities, mergo.WithOverride)
 	}
+	if c.WebSummonerOptions != nil {
+		_ = mergo.Merge(c, *c.WebSummonerOptions, mergo.WithOverride)
+	}
+}
+
+func (c *Caps) AudioEnabled() bool {
+	return c.Audio == nil || *c.Audio
 }
 
 func (c *Caps) BrowserName() string {

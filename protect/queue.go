@@ -2,13 +2,13 @@ package protect
 
 import (
 	"errors"
-	"github.com/aerokube/selenoid/info"
+	"github.com/websummoner/websummoner/info"
 	"log"
 	"math"
 	"net/http"
 	"time"
 
-	"github.com/aerokube/selenoid/jsonerror"
+	"github.com/websummoner/websummoner/jsonerror"
 )
 
 // Queue - struct to hold a number of sessions
@@ -20,18 +20,20 @@ type Queue struct {
 	used     chan struct{}
 }
 
-// Try - when X-Selenoid-No-Wait header is set
+// Try - when X-WebSummoner-No-Wait (or legacy X-Selenoid-No-Wait) header is set
 // reply to client immediately if queue is full
 func (q *Queue) Try(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, noWait := r.Header["X-Selenoid-No-Wait"]
+		// Ggr sends these with an empty value, so presence is what matters.
+		noWait := len(r.Header.Values("X-WebSummoner-No-Wait")) > 0 ||
+			len(r.Header.Values("X-Selenoid-No-Wait")) > 0
 		select {
 		case q.limit <- struct{}{}:
 			<-q.limit
 		default:
 			if noWait {
 				err := errors.New(http.StatusText(http.StatusTooManyRequests))
-				jsonerror.UnknownError(err).Encode(w)
+				jsonerror.TooManyRequests(err).Encode(w)
 				return
 			}
 		}

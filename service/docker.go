@@ -3,8 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"github.com/aerokube/selenoid/info"
-	"github.com/docker/docker/api/types"
+	"github.com/websummoner/websummoner/info"
 	"log"
 	"net"
 	"net/url"
@@ -14,8 +13,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aerokube/selenoid/config"
-	"github.com/aerokube/selenoid/session"
 	ctr "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/strslice"
@@ -23,6 +20,8 @@ import (
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/go-units"
+	"github.com/websummoner/websummoner/config"
+	"github.com/websummoner/websummoner/session"
 )
 
 const (
@@ -129,8 +128,8 @@ func (d *Docker) StartWithCancel() (*StartedService, error) {
 		ExtraHosts: getExtraHosts(d.Service, d.Caps),
 	}
 	hostConfig.PublishAllPorts = d.Service.PublishAllPorts
-	if len(d.Caps.DNSServers) > 0 {
-		hostConfig.DNS = d.Caps.DNSServers
+	if len(d.DNSServers) > 0 {
+		hostConfig.DNS = d.DNSServers
 	}
 	if !d.Privileged {
 		hostConfig.CapAdd = strslice.StrSlice{sysAdmin}
@@ -234,7 +233,7 @@ func (d *Docker) StartWithCancel() (*StartedService, error) {
 		Url: u,
 		Container: &session.Container{
 			ID:        browserContainerId,
-			IPAddress: getContainerIP(d.Environment.Network, stat),
+			IPAddress: getContainerIP(d.Network, stat),
 			Ports:     publishedPortsInfo,
 		},
 		HostPort: hostPort,
@@ -356,12 +355,47 @@ func getTimeZone(service ServiceBase, caps session.Caps) *time.Location {
 	return timeZone
 }
 
+// proxyEnv turns the W3C proxy capability into environment variables for
+// drivers that ignore it. WebKit is the case that matters: it takes its proxy
+// from the system, which in a container means http_proxy and friends.
+//
+// GIO_USE_PROXY_RESOLVER does not belong here — "environment" is not a module
+// GLib ships, so it only logs a warning.
+func proxyEnv(caps session.Caps) []string {
+	if caps.BrowserName() != "safari" || caps.Proxy == nil {
+		return nil
+	}
+	p := caps.Proxy
+	if !strings.EqualFold(p.Type, "manual") || (p.HTTPProxy == "" && p.SSLProxy == "") {
+		return nil
+	}
+	withScheme := func(hostPort string) string {
+		if hostPort == "" || strings.Contains(hostPort, "://") {
+			return hostPort
+		}
+		return "http://" + hostPort
+	}
+	// ::1 too: a numeric IPv6 loopback does not match the "localhost" entry.
+	noProxy := append([]string{"localhost", "127.0.0.1", "::1"}, p.NoProxy...)
+	env := []string{
+		fmt.Sprintf("no_proxy=%s", strings.Join(noProxy, ",")),
+	}
+	if p.HTTPProxy != "" {
+		env = append(env, fmt.Sprintf("http_proxy=%s", withScheme(p.HTTPProxy)))
+	}
+	if p.SSLProxy != "" {
+		env = append(env, fmt.Sprintf("https_proxy=%s", withScheme(p.SSLProxy)))
+	}
+	return env
+}
+
 func getEnv(service ServiceBase, caps session.Caps) []string {
 	env := []string{
 		fmt.Sprintf("TZ=%s", getTimeZone(service, caps)),
 		fmt.Sprintf("SCREEN_RESOLUTION=%s", caps.ScreenResolution),
 		fmt.Sprintf("ENABLE_VNC=%v", caps.VNC),
 		fmt.Sprintf("ENABLE_VIDEO=%v", caps.Video),
+		fmt.Sprintf("ENABLE_AUDIO=%v", caps.AudioEnabled()),
 	}
 	if caps.Skin != "" {
 		env = append(env, fmt.Sprintf("SKIN=%s", caps.Skin))
@@ -369,6 +403,7 @@ func getEnv(service ServiceBase, caps session.Caps) []string {
 	if caps.VideoCodec != "" {
 		env = append(env, fmt.Sprintf("CODEC=%s", caps.VideoCodec))
 	}
+	env = append(env, proxyEnv(caps)...)
 	env = append(env, service.Service.Env...)
 	env = append(env, caps.Env...)
 	return env
@@ -436,10 +471,8 @@ func getLabels(service *config.Browser, caps session.Caps) map[string]string {
 	return labels
 }
 
-func getHostPort(env Environment, servicePort string, caps session.Caps, stat types.ContainerJSON, pc map[string]nat.Port) session.HostPort {
-	fn := func(containerPort string, port nat.Port) string {
-		return ""
-	}
+func getHostPort(env Environment, servicePort string, caps session.Caps, stat ctr.InspectResponse, pc map[string]nat.Port) session.HostPort {
+	var fn func(containerPort string, port nat.Port) string
 	if env.IP == "" {
 		if env.InDocker {
 			containerIP := getContainerIP(env.Network, stat)
@@ -470,7 +503,7 @@ func getHostPort(env Environment, servicePort string, caps session.Caps, stat ty
 	return hp
 }
 
-func getContainerPorts(stat types.ContainerJSON) map[string]string {
+func getContainerPorts(stat ctr.InspectResponse) map[string]string {
 	ns := stat.NetworkSettings
 
 	var exposedPorts = make(map[string]string)
@@ -483,11 +516,8 @@ func getContainerPorts(stat types.ContainerJSON) map[string]string {
 	return exposedPorts
 }
 
-func getContainerIP(networkName string, stat types.ContainerJSON) string {
+func getContainerIP(networkName string, stat ctr.InspectResponse) string {
 	ns := stat.NetworkSettings
-	if ns.IPAddress != "" {
-		return stat.NetworkSettings.IPAddress
-	}
 	if len(ns.Networks) > 0 {
 		var possibleAddresses []string
 		for name, nt := range ns.Networks {
@@ -505,7 +535,7 @@ func getContainerIP(networkName string, stat types.ContainerJSON) string {
 	return ""
 }
 
-func startVideoContainer(ctx context.Context, cl *client.Client, requestId uint64, browserContainer types.ContainerJSON, environ Environment, service ServiceBase, caps session.Caps) (string, error) {
+func startVideoContainer(ctx context.Context, cl *client.Client, requestId uint64, browserContainer ctr.InspectResponse, environ Environment, service ServiceBase, caps session.Caps) (string, error) {
 	videoContainerStartTime := time.Now()
 	videoContainerImage := environ.VideoContainerImage
 	env := getEnv(service, caps)
@@ -517,6 +547,9 @@ func startVideoContainer(ctx context.Context, cl *client.Client, requestId uint6
 	videoFrameRate := caps.VideoFrameRate
 	if videoFrameRate > 0 {
 		env = append(env, fmt.Sprintf("FRAME_RATE=%d", videoFrameRate))
+	}
+	if !caps.AudioEnabled() {
+		env = append(env, "DISABLE_AUDIO=true")
 	}
 	hostConfig := &ctr.HostConfig{
 		Binds:       []string{fmt.Sprintf("%s:/data:rw,z", getVideoOutputDir(environ))},

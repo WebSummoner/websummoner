@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aerokube/selenoid/session"
 	"github.com/docker/docker/api/types/container"
+	"github.com/websummoner/websummoner/session"
 )
 
 // Session - session id and vnc flag
@@ -134,10 +134,19 @@ func (config *Config) Find(name string, version string) (*Browser, string, bool)
 			return nil, "", false
 		}
 	}
+	// exact key wins; otherwise the longest key having the requested
+	// version as prefix, so map iteration order never decides the match
+	if _, ok := browser.Versions[version]; ok {
+		return browser.Versions[version], version, true
+	}
+	matched, match := "", (*Browser)(nil)
 	for v, b := range browser.Versions {
-		if strings.HasPrefix(v, version) {
-			return b, v, true
+		if strings.HasPrefix(v, version) && len(v) > len(matched) {
+			matched, match = v, b
 		}
+	}
+	if match != nil {
+		return match, matched, true
 	}
 	return nil, version, false
 }
@@ -171,10 +180,7 @@ func (config *Config) State(sessions *session.Map, limit, queued, pending int) *
 			state.Browsers[browserName][version][session.Quota] = v
 		}
 		v.Count++
-		vnc := false
-		if session.HostPort.VNC != "" {
-			vnc = true
-		}
+		vnc := session.HostPort.VNC != ""
 		ctr := session.Container
 		sess := Session{
 			ID:            id,

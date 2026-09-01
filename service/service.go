@@ -7,9 +7,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/aerokube/selenoid/config"
-	"github.com/aerokube/selenoid/session"
 	"github.com/docker/docker/client"
+	"github.com/websummoner/websummoner/config"
+	"github.com/websummoner/websummoner/session"
 )
 
 // Environment - all settings that influence browser startup

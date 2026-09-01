@@ -1,4 +1,4 @@
 /*
-Selenoid is a powerful implementation of Selenium Hub using Docker or standalone web driver binaries to start and launch browsers. Documentation has moved to: https://aerokube.com/selenoid/latest.
+WebSummoner is a powerful implementation of Selenium Hub using Docker or standalone web driver binaries to start and launch browsers. It is developed and maintained by RIADVICE. Documentation: https://websummoner.github.io/websummoner/
 */
 package main

@@ -6,9 +6,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/aerokube/selenoid/config"
-	"github.com/aerokube/selenoid/session"
 	assert "github.com/stretchr/testify/require"
+	"github.com/websummoner/websummoner/config"
+	"github.com/websummoner/websummoner/session"
 )
 
 const testLogConf = "config/container-logs.json"
@@ -67,7 +67,7 @@ func TestConfigEmptyState(t *testing.T) {
 	confFile := configfile(`{}`)
 	defer os.Remove(confFile)
 	conf := config.NewConfig()
-	conf.Load(confFile, testLogConf)
+	_ = conf.Load(confFile, testLogConf)
 
 	state := conf.State(session.NewMap(), 0, 0, 0)
 	assert.Equal(t, state.Total, 0)
@@ -112,7 +112,7 @@ func TestConfigNonEmptyVersions(t *testing.T) {
 	confFile := configfile(`{"firefox":{"default":"49.0","versions":{"49.0":{}}}}`)
 	defer os.Remove(confFile)
 	conf := config.NewConfig()
-	conf.Load(confFile, testLogConf)
+	_ = conf.Load(confFile, testLogConf)
 
 	sessions := session.NewMap()
 	sessions.Put("0", &session.Session{Caps: session.Caps{Name: "firefox", Version: "49.0"}, Quota: "unknown"})
@@ -128,7 +128,7 @@ func TestConfigFindMissingBrowser(t *testing.T) {
 	confFile := configfile(`{}`)
 	defer os.Remove(confFile)
 	conf := config.NewConfig()
-	conf.Load(confFile, testLogConf)
+	_ = conf.Load(confFile, testLogConf)
 
 	_, _, ok := conf.Find("firefox", "")
 	assert.False(t, ok)
@@ -138,7 +138,7 @@ func TestConfigFindDefaultVersionError(t *testing.T) {
 	confFile := configfile(`{"firefox":{"default":""}}`)
 	defer os.Remove(confFile)
 	conf := config.NewConfig()
-	conf.Load(confFile, testLogConf)
+	_ = conf.Load(confFile, testLogConf)
 
 	_, _, ok := conf.Find("firefox", "")
 	assert.False(t, ok)
@@ -190,6 +190,30 @@ func TestConfigFindFoundByMatch(t *testing.T) {
 	_, v, ok := conf.Find("firefox", "49.0")
 	assert.True(t, ok)
 	assert.Equal(t, v, "49.0")
+}
+
+func TestConfigFindPrefersLongestPrefix(t *testing.T) {
+	confFile := configfile(`{"firefox":{"default":"154.0","versions":{"154.0":{},"154.0.1":{}}}}`)
+	defer os.Remove(confFile)
+	conf := config.NewConfig()
+	err := conf.Load(confFile, testLogConf)
+	assert.NoError(t, err)
+
+	_, v, ok := conf.Find("firefox", "154")
+	assert.True(t, ok)
+	assert.Equal(t, v, "154.0.1")
+}
+
+func TestConfigFindExactKeyWins(t *testing.T) {
+	confFile := configfile(`{"firefox":{"default":"154.0","versions":{"154.0":{},"154.0.1":{}}}}`)
+	defer os.Remove(confFile)
+	conf := config.NewConfig()
+	err := conf.Load(confFile, testLogConf)
+	assert.NoError(t, err)
+
+	_, v, ok := conf.Find("firefox", "154.0")
+	assert.True(t, ok)
+	assert.Equal(t, v, "154.0")
 }
 
 func TestConfigFindImage(t *testing.T) {

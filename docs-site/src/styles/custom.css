@@ -1,0 +1,105 @@
+/* WebSummoner docs — small tweaks on top of Starlight defaults. */
+
+/* Slightly larger body text for readability of dense reference pages. */
+main {
+  --sl-text-body-size: 1.02rem;
+}
+
+/* Keep wide capability/flag tables readable: allow horizontal scroll. */
+.sl-markdown-table-container {
+  overflow-x: auto;
+}
+
+/* Any image dropped into a page scales with its column instead of forcing the
+ * layout wide — screenshots and animated captures are often twice the text
+ * width. */
+.sl-markdown-content img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Splash hero image: Starlight renders it with the asset's intrinsic width, so
+ * a wide capture pushes the hero out and squeezes the copy beside it. Make it
+ * fluid within its column and cap it, so it shrinks with the page instead of
+ * setting the page's width. */
+.hero > img,
+.hero .hero-html img {
+  width: 100%;
+  height: auto;
+  max-width: 26rem;
+  max-height: 55vh;
+  object-fit: contain;
+  margin-inline: auto;
+}
+
+/* A figure that leads a landing page: centred, capped, and never taller than
+ * half the viewport so the content below it stays reachable. */
+.hero-figure {
+  margin: 0 auto 2.5rem;
+  max-width: 44rem;
+  text-align: center;
+}
+.hero-figure img {
+  width: 100%;
+  height: auto;
+  max-height: 50vh;
+  object-fit: contain;
+  border-radius: 10px;
+}
+.hero-figure figcaption {
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--sl-color-gray-3);
+}
+
+/* Maintainer banner on the docs landing page. */
+.maintainer-banner {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  background: var(--sl-color-bg-surface, #f7f9fb);
+  border: 1px solid var(--sl-color-gray-6, #e6e9ee);
+  border-radius: 10px;
+  padding: 1rem 1.5rem;
+  margin: 0 0 2rem;
+}
+.maintainer-banner img {
+  flex-shrink: 0;
+}
+.maintainer-banner p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.maintainer-banner a {
+  color: var(--sl-color-text-accent, #0a64c9);
+  font-weight: 500;
+}
+
+/* Logo swap: the light mark on light backgrounds, the dark mark on dark. */
+.maintainer-banner img.logo-dark {
+  display: none;
+}
+.maintainer-banner img.logo-light {
+  display: block;
+}
+:root[data-theme='dark'] .maintainer-banner img.logo-dark {
+  display: block;
+}
+:root[data-theme='dark'] .maintainer-banner img.logo-light {
+  display: none;
+}
+
+:root[data-theme='dark'] {
+  --ws-brand: #93b3e6;
+}
+:root[data-theme='dark'] main h1,
+:root[data-theme='dark'] main h2,
+:root[data-theme='dark'] main h3 {
+  color: #c8d7f2;
+}
+:root[data-theme='dark'] .maintainer-banner,
+.maintainer-banner {
+  background: var(--sl-color-bg-surface);
+}

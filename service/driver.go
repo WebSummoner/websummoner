@@ -3,7 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
-	"github.com/aerokube/selenoid/info"
+	"github.com/websummoner/websummoner/info"
 	"log"
 	"net"
 	"net/url"
@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/aerokube/selenoid/session"
+	"github.com/websummoner/websummoner/session"
 )
 
 // Driver - driver processes manager
@@ -50,7 +50,7 @@ func (d *Driver) StartWithCancel() (*StartedService, error) {
 	cmdLine = append(cmdLine, fmt.Sprintf("--port=%s", port))
 	cmd := exec.Command(cmdLine[0], cmdLine[1:]...)
 	cmd.Env = append(cmd.Env, d.Service.Env...)
-	cmd.Env = append(cmd.Env, d.Caps.Env...)
+	cmd.Env = append(cmd.Env, d.Env...)
 	if d.CaptureDriverLogs {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -78,7 +78,7 @@ func (d *Driver) StartWithCancel() (*StartedService, error) {
 	log.Printf("[%d] [PROCESS_STARTED] [%d] [%.2fs]", requestId, cmd.Process.Pid, info.SecondsSince(s))
 	log.Printf("[%d] [PROXY_TO] [%s]", requestId, u.String())
 	hp := session.HostPort{}
-	if d.Caps.VNC {
+	if d.VNC {
 		hp.VNC = "127.0.0.1:5900"
 	}
 	return &StartedService{Url: u, HostPort: hp, Origin: fmt.Sprintf("localhost:%s", port), Cancel: func() { d.stopProcess(cmd) }}, nil

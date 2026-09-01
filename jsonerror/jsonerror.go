@@ -40,6 +40,13 @@ func UnknownError(err error) *SeleniumError {
 	return newSeleniumError("unknown error", err, http.StatusInternalServerError)
 }
 
+// TooManyRequests is returned when the session queue is full and the client
+// set the no-wait header. HTTP 429 is the correct status per RFC 6585 and
+// upstream issue #1203.
+func TooManyRequests(err error) *SeleniumError {
+	return newSeleniumError("too many requests", err, http.StatusTooManyRequests)
+}
+
 func (se *SeleniumError) Encode(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(se.Status)

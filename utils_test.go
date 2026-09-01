@@ -15,12 +15,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aerokube/selenoid/protect"
-	"github.com/aerokube/selenoid/service"
-	"github.com/aerokube/selenoid/session"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	assert "github.com/stretchr/testify/require"
+	"github.com/websummoner/websummoner/protect"
+	"github.com/websummoner/websummoner/service"
+	"github.com/websummoner/websummoner/session"
 )
 
 type HTTPTest struct {
