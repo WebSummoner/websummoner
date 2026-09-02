@@ -61,8 +61,8 @@ WebSummoner falls back to **prefix matching**, picking the longest key that
 works with the key `"152"`, a full pin with the full version string.
 
 ```text
-browsers.json has  "152.0" and "152.0.7977.64"
-request version =  "152"           → matches 152.0.7977.64 (longest prefix)
+browsers.json has  "152.0" and "152.0.7977.75"
+request version =  "152"           → matches 152.0.7977.75 (longest prefix)
 request version =  "152.0"         → matches 152.0           (exact key wins)
 request version =  "152.1"         → no match  (no key starts with 152.1)
 ```

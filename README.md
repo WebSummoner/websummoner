@@ -7,7 +7,7 @@
 
 **WebSummoner is developed and maintained by [RIADVICE](https://riadvice.com)** — a Selenium hub updated with current Go toolchains, modern browser images and community fixes.
 
-WebSummoner is a powerful implementation of [Selenium](http://github.com/SeleniumHQ/selenium) hub using [Docker](https://docker.com/) containers to launch browsers.
+WebSummoner is a fast [Selenium](http://github.com/SeleniumHQ/selenium) hub that summons a fleet of browsers into [Docker](https://docker.com/) containers — ephemeral, session-scoped environments.
 ![WebSummoner Animation](docs-site/public/img/websummoner-animation.gif)
 
 ## Features

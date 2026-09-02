@@ -59,8 +59,8 @@ works normally.
 
 | Opera | Driver used | Container suite |
 | --- | --- | --- |
-| **135.0.5973.66** *(current)* | `OperaDriver 150` (newest published) | **all 32 tests pass** |
-| 134.0.5954.66 | `OperaDriver 150` (matching line) | **all 32 tests pass** |
+| **135.0.5973.76** *(current)* | `OperaDriver 150` (newest published) | **full suite passes** |
+| 134.0.5954.66 | `OperaDriver 150` (matching line) | **full suite passes** |
 
 Substituting a chromedriver is the tempting shortcut here and it does start a
 session, but it crashes the renderer whenever a *page* opens a window — a
@@ -96,15 +96,15 @@ windows by title or URL rather than assuming the first handle is your page.
 
 ### WebKit (Safari)
 
-`WebKitWebDriver` is less complete than the Chromium and Gecko drivers, and
-WebSummoner fills two of the gaps from outside the browser:
+WebKit passes the full container suite, the same one every other image runs.
+Getting there meant filling two `WebKitWebDriver` gaps from outside the browser:
 
 - **File upload** works — the hub copies uploaded files straight into the
   container, so it does not depend on the driver implementing the endpoint.
 - **The `proxy` capability** works — see [Proxies](#proxies-on-webkit) below.
 
-Two things still need care: cookies must set `sameSite`, and WebKit is sensitive
-to host load.
+Two behaviours still need care when you write tests: cookies must set
+`sameSite`, and WebKit is the first engine to suffer when the host is loaded.
 
 #### Setting cookies
 
@@ -238,6 +238,8 @@ binaries](/reference/browsers-config/#standalone-driver-binaries) form of
   achieves the same effect and works.
 - **No `data:` URL navigation.** The driver rejects `data:` URLs — serve
   test pages over HTTP instead (a fixture server, or any web server).
+- **`close()` ends the session**, reporting an empty-message error like its
+  `quit()`. Use one window per session rather than closing them.
 
 ## Custom root certificates
 

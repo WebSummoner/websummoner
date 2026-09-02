@@ -39,7 +39,7 @@ export default defineConfig({
     starlight({
       title: 'WebSummoner',
       description:
-        'A fast Selenium hub that launches browsers in Docker containers — video recording, logs, live screen and more. Developed and maintained by RIADVICE.',
+        'Summon a fleet of browsers into Docker containers. A fast Selenium hub with ephemeral, session-scoped environments. Video recording, logs, live screen and more. Developed and maintained by RIADVICE.',
       favicon: '/img/favicon.png',
       head: [
         ...analytics,

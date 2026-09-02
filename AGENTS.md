@@ -2,10 +2,11 @@
 
 ## What this project is
 
-WebSummoner is a Selenium hub: it receives WebDriver requests and starts a
-fresh browser in a Docker container for each session, then proxies the session
-to it. One container per session means no state leaks between tests, and the
-container is destroyed when the session ends.
+WebSummoner is a fast Selenium hub: it receives WebDriver requests and summons
+a fresh browser into a Docker container for each session — an ephemeral,
+session-scoped environment — then proxies the session to it. One container per
+session means no state leaks between tests, and the container is destroyed when
+the session ends.
 
 It is a maintained fork of [Aerokube Selenoid](https://github.com/aerokube/selenoid),
 which its maintainers archived in December 2024.

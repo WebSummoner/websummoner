@@ -12,11 +12,11 @@ version tag that never changes.
 | --- | --- | --- |
 | Line (floats) | `chrome:152`, `firefox:155`, `yandex:26.6`, `brave:1.94` | Always the latest patch of that release line. Rebuilt automatically whenever the vendor ships a patch. |
 | Major.minor (alias) | `chrome:152.0`, `firefox:155.0` | Same image as the line tag; kept so existing scripts keep working. Skipped when the line already is major.minor (`yandex:26.6`, `brave:1.94`). |
-| Full version (pinned) | `chrome:152.0.7977.64`, `firefox:155.0.0`, `brave:1.94.117` | The exact version the vendor published. Never rebuilt or repointed — pin this in CI for reproducible runs. |
+| Full version (pinned) | `chrome:152.0.7977.75`, `firefox:155.0.0`, `brave:1.94.119` | The exact version the vendor published. Never rebuilt or repointed — pin this in CI for reproducible runs. |
 
 ```bash
 docker pull websummoner/chrome:152            # floats to the latest 152.x
-docker pull websummoner/chrome:152.0.7977.64  # this exact build, forever
+docker pull websummoner/chrome:152.0.7977.75  # this exact build, forever
 ```
 
 ## What each browser's "line" means
@@ -26,12 +26,12 @@ prefix that identifies the release users actually track:
 
 | Browser | Line | Full version looks like | Notes |
 | --- | --- | --- | --- |
-| Chrome | `152` | `152.0.7977.64` | Chrome-for-Testing milestone; chromedriver matches the exact build |
+| Chrome | `152` | `152.0.7977.75` | Chrome-for-Testing milestone; chromedriver matches the exact build |
 | Firefox | `155` | `155.0.0`, then `155.0.1` | Mozilla writes a first release as `155.0`; it is tagged `155.0.0` so the ladder matches every other browser. geckodriver is version-independent |
-| Edge | `152` | `152.0.4191.53` | msedgedriver matches the exact build |
-| Opera | `135` | `135.0.5973.66` | driver resolved from the Chromium line Opera ships (Opera N = Chromium N+16), falling back to the newest `operadriver` — see [Opera](/reference/browser-images/#opera) |
+| Edge | `152` | `152.0.4191.62` | msedgedriver matches the exact build |
+| Opera | `135` | `135.0.5973.76` | driver resolved from the Chromium line Opera ships (Opera N = Chromium N+16), falling back to the newest `operadriver` — see [Opera](/reference/browser-images/#opera) |
 | Yandex Browser | `26.6` | `26.6.1.1083` | the line itself is major.minor |
-| Brave | `1.94` | `1.94.117` | the line itself is major.minor; chromedriver matches the embedded Chromium |
+| Brave | `1.94` | `1.94.119` | the line itself is major.minor; chromedriver matches the embedded Chromium |
 | Safari | — | `2.52.6` | full WebKitGTK version only — each release is a substantially different engine, so nothing floats |
 
 Unlike PostgreSQL, browsers do not publish a predictable version grid —
@@ -104,7 +104,7 @@ keep the `enableVNC` capability — the behavior is identical.
 ## Requesting versions in sessions
 
 The `version` capability matches browsers.json keys by prefix, so any of
-`"152"`, `"152.0"` or the full `"152.0.7977.64"` selects the image when
+`"152"`, `"152.0"` or the full `"152.0.7977.75"` selects the image when
 the key covers it. An exact key always wins; otherwise the most specific
 (longest) matching key is used — see
 [Browsers configuration](/reference/browsers-config/#how-version-matching-works)

@@ -37,16 +37,16 @@ instead of silently falling back to something else.
 
 ```bash
 # Chrome (version is the google-chrome-stable package version)
-./images chrome -b 152.0.7977.64-1 -t websummoner/chrome:152
+./images chrome -b 152.0.7977.75-1 -t websummoner/chrome:152
 
 # Firefox (version is the Mozilla apt package version)
 ./images firefox -b 155.0~build1 -t websummoner/firefox:155
 
 # Edge (driver version must match the browser version)
-./images edge -b 152.0.4191.53-1 -d 152.0.4191.53 -t websummoner/edge:152
+./images edge -b 152.0.4191.62-1 -d 152.0.4191.62 -t websummoner/edge:152
 
 # Opera (omit -d: the driver is resolved automatically, see the note below)
-./images opera -b 135.0.5973.66-1 -t websummoner/opera:135
+./images opera -b 135.0.5973.76-1 -t websummoner/opera:135
 
 # Yandex (driver version is the YandexDriver Linux asset version)
 ./images yandex -b 26.6.1.1083-1 -d 26.6.1 -t websummoner/yandex:26.6
