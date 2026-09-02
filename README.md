@@ -51,12 +51,12 @@ Suitable for personal usage and in big clusters:
 * Fully **isolated** and **reproducible** environment
 
 ### Detailed Documentation
-* Detailed [documentation](https://websummoner.github.io/websummoner/) — built from [`docs-site/`](docs-site/) with [Astro Starlight](https://starlight.astro.build), deployed to GitHub Pages by the custom `docs` workflow
+* Detailed [documentation](https://websummoner.riadvice.com/websummoner/) — built from [`docs-site/`](docs-site/) with [Astro Starlight](https://starlight.astro.build), deployed to GitHub Pages by the custom `docs` workflow
 * Compatible with the vast [Selenoid](https://stackoverflow.com/questions/tagged/selenoid) community knowledge on StackOverflow
 
 ## Complete Guide & Build Instructions
 
-Complete reference guide (including building instructions) lives at [websummoner.github.io/websummoner](https://websummoner.github.io/websummoner/) (source: [`docs-site/`](docs-site/)).
+Complete reference guide (including building instructions) lives at [websummoner.riadvice.com/websummoner](https://websummoner.riadvice.com/websummoner/) (source: [`docs-site/`](docs-site/)).
 
 Building requires **only Docker** — no Go installation on your machine:
 ```

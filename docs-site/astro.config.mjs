@@ -2,6 +2,18 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import rehypeBaseLinks from './plugins/base-links.mjs';
 
+// Analytics is opt-in: no GA_MEASUREMENT_ID, no tracking code.
+const gaId = process.env.GA_MEASUREMENT_ID;
+
+// No Google code in the page: /consent.js injects gtag only once the visitor accepts.
+const analytics = gaId
+  ? [
+      { tag: 'script', content: `window.WS_GA_ID='${gaId}';` },
+      { tag: 'script', attrs: { defer: true, src: '/consent.js' } },
+    ]
+  : [];
+
+
 // Static output only: `astro build` emits a plain `dist/` folder that GitHub
 // Pages (or any web server) can serve. Full-text search is Pagefind — a
 // static index generated at build time under /_pagefind/. No database, no
@@ -14,7 +26,7 @@ import rehypeBaseLinks from './plugins/base-links.mjs';
 // project GitHub Pages URL (username.github.io/<repo>/), set
 // base: '/websummoner/' again and restore `site` accordingly.
 export default defineConfig({
-  site: 'https://websummoner.github.io',
+  site: 'https://websummoner.riadvice.com',
   base: '/websummoner/',
 
   // Hand-written root-relative links in Markdown are not base-aware on their
@@ -30,9 +42,10 @@ export default defineConfig({
         'A fast Selenium hub that launches browsers in Docker containers — video recording, logs, live screen and more. Developed and maintained by RIADVICE.',
       favicon: '/img/favicon.png',
       head: [
-        { tag: 'meta', attrs: { property: 'og:image', content: 'https://websummoner.github.io/websummoner/img/og-image.jpg' } },
+        ...analytics,
+        { tag: 'meta', attrs: { property: 'og:image', content: 'https://websummoner.riadvice.com/websummoner/img/og-image.jpg' } },
         { tag: 'meta', attrs: { name: 'twitter:card', content: 'summary_large_image' } },
-        { tag: 'meta', attrs: { name: 'twitter:image', content: 'https://websummoner.github.io/websummoner/img/og-image.jpg' } },
+        { tag: 'meta', attrs: { name: 'twitter:image', content: 'https://websummoner.riadvice.com/websummoner/img/og-image.jpg' } },
       ],
       customCss: ['./src/styles/custom.css'],
       components: {

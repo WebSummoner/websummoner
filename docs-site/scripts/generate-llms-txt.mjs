@@ -16,7 +16,7 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const dist = join(root, 'dist');
 const contentDocs = join(root, 'src', 'content', 'docs');
 
-const SITE_URL = 'https://websummoner.github.io/websummoner';
+const SITE_URL = 'https://websummoner.riadvice.com/websummoner';
 const SECTION_ORDER = ['getting-started', 'guides', 'reference', 'troubleshooting'];
 const SECTION_LABELS = {
   '': 'Start here & project pages',

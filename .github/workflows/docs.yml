@@ -2,7 +2,7 @@ name: docs
 
 # Custom docs pipeline for the Starlight site in docs-site/.
 #
-#  - Push to master  -> build + deploy to GitHub Pages (websummoner.github.io/websummoner)
+#  - Push to master  -> build + deploy to GitHub Pages (websummoner.riadvice.com/websummoner)
 #  - Pull request    -> build only, so broken Markdown/links fail the check early
 #  - workflow_dispatch -> manual deploy, e.g. after enabling Pages or changing config
 #
@@ -49,8 +49,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Analytics is opt-in: unset means no tracking code at all.
       - name: Build site (Pagefind index + llms.txt)
         run: npm run build
+        env:
+          GA_MEASUREMENT_ID: ${{ secrets.GA_MEASUREMENT_ID || vars.GA_MEASUREMENT_ID }}
 
       # astro build fails on dead internal links by itself; the explicit check
       # surfaces a friendlier error message on PRs.
