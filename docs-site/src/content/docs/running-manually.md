@@ -19,7 +19,7 @@ Create `config/browsers.json`:
     "default": "154.0",
     "versions": {
       "154.0": {
-        "image": "websummoner/firefox:154.0",
+        "image": "websummoner/firefox:155.0.0",
         "port": "4444",
         "path": "/"
       }
@@ -38,7 +38,7 @@ field reference.
 Then pull the browser image so the first session does not wait for a download:
 
 ```bash
-docker pull websummoner/firefox:154.0
+docker pull websummoner/firefox:155.0.0
 ```
 
 ## 2. Start WebSummoner

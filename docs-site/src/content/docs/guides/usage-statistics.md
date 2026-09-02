@@ -17,7 +17,7 @@ curl http://localhost:4444/status
   "pending": 1,
   "browsers": {
     "firefox": {
-      "154.0": {
+      "155.0": {
         "user1": {
           "count": 1,
           "sessions": [

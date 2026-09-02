@@ -27,7 +27,7 @@ example:
 
 ```bash
 docker pull websummoner/chrome:152
-docker pull websummoner/firefox:154
+docker pull websummoner/firefox:155
 docker pull websummoner/edge:152
 docker pull websummoner/opera:135
 docker pull websummoner/yandex:26.6

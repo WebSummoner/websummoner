@@ -33,7 +33,7 @@ Two browsers, several versions, sensible container tuning:
     "default": "154.0",
     "versions": {
       "154.0": {
-        "image": "websummoner/firefox:154.0",
+        "image": "websummoner/firefox:155.0.0",
         "port": "4444",
         "path": "/",
         "tmpfs": { "/tmp": "size=512m" }

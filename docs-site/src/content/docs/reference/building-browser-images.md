@@ -40,7 +40,7 @@ instead of silently falling back to something else.
 ./images chrome -b 152.0.7977.64-1 -t websummoner/chrome:152
 
 # Firefox (version is the Mozilla apt package version)
-./images firefox -b 154.0.1~build1 -t websummoner/firefox:154
+./images firefox -b 155.0~build1 -t websummoner/firefox:155
 
 # Edge (driver version must match the browser version)
 ./images edge -b 152.0.4191.53-1 -d 152.0.4191.53 -t websummoner/edge:152
@@ -73,7 +73,7 @@ path — the file name must contain the full version, because the tool derives
 the browser version from it:
 
 ```bash
-./images firefox -b /path/to/firefox_154.0.1_amd64.deb -t websummoner/firefox:154
+./images firefox -b /path/to/firefox_155.0.0_amd64.deb -t websummoner/firefox:155
 ```
 
 Add `--test` to run the container test suite after building (requires the

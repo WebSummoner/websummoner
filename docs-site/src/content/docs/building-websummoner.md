@@ -66,7 +66,7 @@ WebSummoner. Just pull:
 
 ```bash
 docker pull websummoner/chrome:152.0
-docker pull websummoner/firefox:154.0
+docker pull websummoner/firefox:155.0.0
 ```
 
 To build fully custom images yourself, the

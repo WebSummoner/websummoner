@@ -54,12 +54,12 @@ A typical log:
 ```text
 2017/11/01 19:12:38 [-] [NEW_REQUEST]
 2017/11/01 19:12:38 [-] [NEW_REQUEST_ACCEPTED]
-2017/11/01 19:12:38 [41301] [LOCATING_SERVICE] [firefox-154.0]
-2017/11/01 19:12:38 [41301] [USING_DOCKER] [firefox-154.0]
-2017/11/01 19:12:39 [41301] [CREATING_CONTAINER] [websummoner/firefox:154.0]
-2017/11/01 19:12:40 [41301] [CONTAINER_STARTED] [websummoner/firefox:154.0] [19760edf...] [896ms]
-2017/11/01 19:12:40 [41301] [SERVICE_STARTED] [websummoner/firefox:154.0] [19760edf...] [605ms]
-2017/11/01 19:12:40 [41301] [PROXY_TO] [websummoner/firefox:154.0] [19760edf...] [http://172.17.0.3:4444/]
+2017/11/01 19:12:38 [41301] [LOCATING_SERVICE] [firefox-155.0.0]
+2017/11/01 19:12:38 [41301] [USING_DOCKER] [firefox-155.0.0]
+2017/11/01 19:12:39 [41301] [CREATING_CONTAINER] [websummoner/firefox:155.0.0]
+2017/11/01 19:12:40 [41301] [CONTAINER_STARTED] [websummoner/firefox:155.0.0] [19760edf...] [896ms]
+2017/11/01 19:12:40 [41301] [SERVICE_STARTED] [websummoner/firefox:155.0.0] [19760edf...] [605ms]
+2017/11/01 19:12:40 [41301] [PROXY_TO] [websummoner/firefox:155.0.0] [19760edf...] [http://172.17.0.3:4444/]
 2017/11/01 19:12:42 [41301] [SESSION_CREATED] [test-quota] [345bb886-...] [http://172.17.0.3:4444/] [1] [4.15s]
 2017/11/01 19:14:30 [41301] [SESSION_DELETED] [345bb886-...]
 ```
@@ -71,7 +71,7 @@ Each entry has bracketed fields:
 | Time | `19:12:42` | When the entry was written |
 | Counter | `[41301]` | Request counter — the session ID does not exist yet during attempts, so this groups all lines of one new-session request |
 | Status | `[SESSION_CREATED]` | What happened — see table below |
-| Browser | `[firefox-154.0]` | Name and version (new-session requests only) |
+| Browser | `[firefox-155.0.0]` | Name and version (new-session requests only) |
 | Attempt | `[1]` | Attempt number; for `SESSION_CREATED` — total attempts used |
 | Session ID | `[345bb886-...]` | Unique per browser session |
 | Duration | `[4.15s]` | Time spent |

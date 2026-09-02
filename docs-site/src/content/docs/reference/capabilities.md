@@ -209,7 +209,7 @@ WebSummoner reads the WebDriver protocol-extensions block under the
 `websummoner:options` key. These two requests are equivalent:
 
 ```json
-{ "browserName": "firefox", "version": "154.0", "screenResolution": "1280x1024x24" }
+{ "browserName": "firefox", "version": "155.0.0", "screenResolution": "1280x1024x24" }
 ```
 
 ```json

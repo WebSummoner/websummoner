@@ -10,9 +10,9 @@ version tag that never changes.
 
 | Tag level | Example | Meaning |
 | --- | --- | --- |
-| Line (floats) | `chrome:152`, `firefox:154`, `yandex:26.6`, `brave:1.94` | Always the latest patch of that release line. Rebuilt automatically whenever the vendor ships a patch. |
-| Major.minor (alias) | `chrome:152.0`, `firefox:154.0` | Same image as the line tag; kept so existing scripts keep working. Skipped when the line already is major.minor (`yandex:26.6`, `brave:1.94`). |
-| Full version (pinned) | `chrome:152.0.7977.64`, `firefox:154.0.1`, `brave:1.94.117` | The exact version the vendor published. Never rebuilt or repointed — pin this in CI for reproducible runs. |
+| Line (floats) | `chrome:152`, `firefox:155`, `yandex:26.6`, `brave:1.94` | Always the latest patch of that release line. Rebuilt automatically whenever the vendor ships a patch. |
+| Major.minor (alias) | `chrome:152.0`, `firefox:155.0` | Same image as the line tag; kept so existing scripts keep working. Skipped when the line already is major.minor (`yandex:26.6`, `brave:1.94`). |
+| Full version (pinned) | `chrome:152.0.7977.64`, `firefox:155.0.0`, `brave:1.94.117` | The exact version the vendor published. Never rebuilt or repointed — pin this in CI for reproducible runs. |
 
 ```bash
 docker pull websummoner/chrome:152            # floats to the latest 152.x
@@ -27,7 +27,7 @@ prefix that identifies the release users actually track:
 | Browser | Line | Full version looks like | Notes |
 | --- | --- | --- | --- |
 | Chrome | `152` | `152.0.7977.64` | Chrome-for-Testing milestone; chromedriver matches the exact build |
-| Firefox | `154` | `154.0`, then `154.0.1` | Mozilla never publishes `.0.0`; geckodriver is version-independent |
+| Firefox | `155` | `155.0.0`, then `155.0.1` | Mozilla writes a first release as `155.0`; it is tagged `155.0.0` so the ladder matches every other browser. geckodriver is version-independent |
 | Edge | `152` | `152.0.4191.53` | msedgedriver matches the exact build |
 | Opera | `135` | `135.0.5973.66` | driver resolved from the Chromium line Opera ships (Opera N = Chromium N+16), falling back to the newest `operadriver` — see [Opera](/reference/browser-images/#opera) |
 | Yandex Browser | `26.6` | `26.6.1.1083` | the line itself is major.minor |
@@ -37,13 +37,13 @@ prefix that identifies the release users actually track:
 Unlike PostgreSQL, browsers do not publish a predictable version grid —
 patches appear irregularly (`154.0`, `154.0.1`, sometimes `154.1.0`).
 Asking for a version the vendor never published, such as
-`firefox:154.0.0`, simply does not exist; the build fails instead of
+`firefox:155.9.0`, simply does not exist; the build fails instead of
 silently falling back to something else.
 
 ## Coverage starts with the versions below
 
 WebSummoner publishes browser images starting from the versions that were
-current at its first release (September 2026): Chrome 152, Firefox 154, Edge
+current at its first release (September 2026): Chrome 152, Firefox 155, Edge
 152, Opera 135, Yandex Browser 26.6, Brave 1.94 and WebKitGTK 2.52 — every
 patch of those lines and of all future lines. **Legacy versions are not
 provided**: the Selenoid-era images (Chrome 48–128, Firefox 3–128, …) are
@@ -64,8 +64,8 @@ Every image carries labels recording the exact browser build and the
 bundled driver — useful in CI logs to prove what actually ran:
 
 ```bash
-docker image inspect websummoner/firefox:154 --format '{{json .Config.Labels}}'
-# {"browser":"firefox:154.0.1~build1","driver":"geckodriver:0.37.1",...}
+docker image inspect websummoner/firefox:155 --format '{{json .Config.Labels}}'
+# {"browser":"firefox:155.0~build1","driver":"geckodriver:0.37.1",...}
 ```
 
 ## Floating tags and drivers
