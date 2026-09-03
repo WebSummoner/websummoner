@@ -49,17 +49,16 @@ Opera ships Chromium **N+16** — Opera 134 is Chromium 150, Opera 135 is Chromi
 Opera's. The build tool works this out and always pairs the browser with the
 right driver.
 
-Opera also publishes its driver late: at the time of writing there is no
-driver on the Chromium 151 line that Opera 135 is built from. The build tool
-handles this by falling back to the **newest `operadriver`**, not to a
-Chrome-for-Testing chromedriver. The version check in this driver family is a
-*warning*, not a refusal — `OperaDriver 150` drives Opera 135 and logs
-`This version of OperaDriver has not been tested with Opera version 151`, then
-works normally.
+Opera also publishes its driver late, so a new Opera can ship before the driver
+for its Chromium line exists. The build tool handles that by falling back to the
+**newest `operadriver`**, not to a Chrome-for-Testing chromedriver. The version
+check in this driver family is a *warning*, not a refusal — a driver one line
+behind drives the browser and logs `This version of OperaDriver has not been
+tested with Opera version 151`, then works normally.
 
 | Opera | Driver used | Container suite |
 | --- | --- | --- |
-| **135.0.5973.76** *(current)* | `OperaDriver 150` (newest published) | **full suite passes** |
+| **135.0.5973.76** *(current)* | `OperaDriver 151` (matching line) | **full suite passes** |
 | 134.0.5954.66 | `OperaDriver 150` (matching line) | **full suite passes** |
 
 Substituting a chromedriver is the tempting shortcut here and it does start a
