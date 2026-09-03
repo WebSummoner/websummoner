@@ -44,13 +44,7 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: ci/docker-push.sh $RELEASE_VERSION
-
-      - name: Latest release image
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-        run: ci/docker-push.sh latest-release
+        run: ci/docker-push.sh "$RELEASE_VERSION" latest-release
 
   # Supply-chain hygiene for the released Docker image:
   #   - SPDX SBOM generated with Syft and attached to the GitHub release
