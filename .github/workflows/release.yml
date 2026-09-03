@@ -77,7 +77,7 @@ jobs:
           syft-version: latest
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v4
+        uses: sigstore/cosign-installer@v4.1.2
 
       - name: Generate SBOM
         run: |
