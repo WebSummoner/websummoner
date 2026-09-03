@@ -1,0 +1,46 @@
+name: ✨ Feature request
+description: Propose something new for any part of WebSummoner.
+labels: ["type:feature", "status:triage"]
+body:
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - hub (websummoner)
+        - ui (websummoner-ui)
+        - ggr
+        - ggr-ui
+        - cm
+        - browser images
+        - docs / website
+        - container tests
+        - CI, release or packaging
+        - cross-cutting / not sure
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that WebSummoner makes hard today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you would like
+      description: A flag, an endpoint, a capability — as concrete as you can make it.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do instead today
+      description: Workarounds, or how another tool solves it.
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I would be willing to open a pull request for this.

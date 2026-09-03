@@ -1,0 +1,77 @@
+name: 🐛 Bug report
+description: Something in WebSummoner does not work. Any component.
+labels: ["type:bug", "status:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the single tracker for every WebSummoner repository. Pick the
+        component below — you do not need to know which repo owns the code.
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Where does the problem show up?
+      options:
+        - hub (websummoner) — sessions, quota, video, /wd/hub
+        - ui (websummoner-ui) — the web interface
+        - ggr — the load balancer
+        - ggr-ui — the aggregated status page
+        - cm — the configuration manager CLI
+        - browser images — chrome, firefox, edge, opera, brave, yandex, webkit
+        - video recorder image
+        - docs / website
+        - container tests
+        - CI, release or packaging
+        - not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: WebSummoner version
+      description: Output of `websummoner -version`, or the image tag you are running.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: The capabilities you sent, or the exact command you ran.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Hub logs
+      description: The lines around the failure. Redact hostnames and keys.
+      render: shell
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, architecture, Docker version, and your browsers.json if relevant.
+      placeholder: |
+        OS: Ubuntu 26.04, linux/amd64
+        Docker: 28.x
+        Client: Selenium 4.4x / Playwright 1.6x
+      render: shell
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before filing
+      options:
+        - label: I searched the existing issues in this tracker.
+          required: true
+        - label: This reproduces on the latest release.

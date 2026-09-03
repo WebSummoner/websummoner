@@ -1,0 +1,13 @@
+# This repo is the organisation's single issue tracker, so it keeps its own
+# templates and does NOT inherit the funnel in WebSummoner/.github.
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Question or discussion
+    url: https://github.com/orgs/WebSummoner/discussions
+    about: Usage questions and migration help — faster than an issue.
+  - name: 📚 Documentation
+    url: https://websummoner.riadvice.com
+    about: Configuration reference, migration guide and browser catalogue.
+  - name: 🔒 Security vulnerability
+    url: https://github.com/WebSummoner/websummoner/security/advisories/new
+    about: Report privately. Please do not open a public issue.

@@ -1,0 +1,42 @@
+name: 🌐 Browser image or version request
+description: A browser, a version or an architecture we do not publish yet.
+labels: ["type:image", "status:triage"]
+body:
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      options:
+        - chrome
+        - chromium
+        - firefox
+        - edge
+        - opera
+        - brave
+        - yandex
+        - webkit
+        - other (say which below)
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: "154.0, or 'latest stable'"
+    validations:
+      required: true
+  - type: dropdown
+    id: arch
+    attributes:
+      label: Architecture
+      options:
+        - linux/amd64
+        - linux/arm64
+        - both
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Anything else
+      description: Upstream download URL, driver version, or why this one matters to you.
