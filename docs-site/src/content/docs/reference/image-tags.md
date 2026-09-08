@@ -8,15 +8,25 @@ convention you may know from the official PostgreSQL or Redis images: a
 short, human-friendly tag that moves with the release line, and a full
 version tag that never changes.
 
-| Tag level | Example | Meaning |
-| --- | --- | --- |
-| Line (floats) | `chrome:152`, `firefox:155`, `yandex:26.6`, `brave:1.94` | Always the latest patch of that release line. Rebuilt automatically whenever the vendor ships a patch. |
-| Major.minor (alias) | `chrome:152.0`, `firefox:155.0` | Same image as the line tag; kept so existing scripts keep working. Skipped when the line already is major.minor (`yandex:26.6`, `brave:1.94`). |
-| Full version (pinned) | `chrome:152.0.7977.75`, `firefox:155.0.0`, `brave:1.94.119` | The exact version the vendor published. Never rebuilt or repointed — pin this in CI for reproducible runs. |
+| Tag level | Example | Mutable? | Meaning |
+| --- | --- | --- | --- |
+| Line | `chrome:152`, `firefox:155`, `yandex:26.6`, `brave:1.94` | **yes** | Always the latest patch of that release line — effectively `152-latest`. Repointed whenever the vendor ships a patch. |
+| Major.minor (alias) | `chrome:152.0`, `firefox:155.0` | **yes** | Same image as the line tag; kept so existing scripts keep working. Skipped when the line already is major.minor (`yandex:26.6`, `brave:1.94`). |
+| Full version | `chrome:152.0.7977.75`, `firefox:155.0.0`, `brave:1.94.119` | no | The exact version the vendor published. Never rebuilt or repointed — pin this in CI for reproducible runs. |
 
 ```bash
 docker pull websummoner/chrome:152            # floats to the latest 152.x
 docker pull websummoner/chrome:152.0.7977.75  # this exact build, forever
+```
+
+`chrome:152` and `chrome:152.0` are pointers, not builds. Pull either one today
+and again after Google ships a patch and you get a different image under the
+same name — the digest changes, and a cached copy on a CI runner will not match
+a fresh pull. That is the point of a line tag, but it does mean a run is only
+reproducible if you pin the full version, or the digest:
+
+```bash
+docker pull websummoner/chrome@sha256:...     # this image and no other
 ```
 
 ## What each browser's "line" means
