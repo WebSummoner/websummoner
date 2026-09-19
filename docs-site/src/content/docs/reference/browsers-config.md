@@ -8,6 +8,11 @@ images (or driver binaries). Pass its path with the `-conf` flag; the default
 is `config/browsers.json` (inside the Docker image:
 `/etc/websummoner/browsers.json`).
 
+The file is optional. WebSummoner also finds browsers by reading labels on the
+images already present on the host — see
+[Discovery from image labels](#discovery-from-image-labels) — and merges the
+file on top, so anything written here always wins.
+
 ## A realistic example
 
 Two browsers, several versions, sensible container tuning:
@@ -135,9 +140,55 @@ cat /path/to/browsers.json \
   | xargs -I{} docker pull {}
 ```
 
+## Discovery from image labels
+
+A browser image can describe itself, in which case it needs no entry in this
+file at all. WebSummoner lists the images on the host and reads:
+
+| Label | Required | Default | Example |
+| --- | --- | --- | --- |
+| `org.websummoner.browser` | yes | — | `chrome` |
+| `org.websummoner.version` | yes | — | `153.0` |
+| `org.websummoner.port` | no | `4444` | `4445` |
+| `org.websummoner.path` | no | `/` | `/wd/hub` |
+
+The official images carry these labels. Your own images only need to declare
+them:
+
+```dockerfile
+FROM my-registry.example/my-chrome:153
+
+LABEL org.websummoner.browser=chrome \
+      org.websummoner.version=153.0
+```
+
+The repository name is never inspected, so images from any registry or
+organisation work identically — the labels are the whole contract.
+
+Two properties worth knowing:
+
+**Only local images are scanned.** A discovered browser is always backed by an
+image that is already pulled, so it cannot fail at session start with "image
+not found". This is why discovery reads the host rather than a registry.
+
+**The file always wins.** Discovery can only add. A version pinned in
+`browsers.json` keeps its image, port, path and container settings, and a
+`default` set there is never overridden.
+
+Discovery is on by default when Docker is in use. Turn it off with
+`-disable-image-discovery`, and it does not apply in drivers mode
+(`-disable-docker`), which has no images to scan.
+
 ## Reloading and updating
 
 - WebSummoner reloads `browsers.json` on `SIGHUP` — no restart needed.
   See [Reloading configuration](/reference/updating-configuration/).
+- `POST /browsers/rescan` does the same over HTTP, which suits a deploy script
+  that has just pulled an image. It replies with the resulting catalog.
 - To move to new browser versions, edit the file and reload; images for the
-  new versions must be pulled first.
+  new versions must be pulled first. With discovery, pulling a labelled image
+  and rescanning is enough.
+
+A reload that would leave no browsers at all is refused, and the previous
+catalog stays live, so a Docker outage or a bad edit cannot silently empty
+the grid.

@@ -12,6 +12,7 @@ All flags go to the `websummoner` binary (or after the image name when using
 | --- | --- | --- |
 | `-listen` | `:4444` | Network address to accept connections on |
 | `-conf` | `config/browsers.json` | Path to the [browsers configuration file](/reference/browsers-config/) |
+| `-disable-image-discovery` | `false` | Do not add browsers found from [image labels](/reference/browsers-config/#discovery-from-image-labels) |
 | `-log-conf` | — | Path to the [container logging configuration file](/reference/logging-config/) |
 | `-limit` | `5` | Maximum simultaneous browser containers |
 | `-retry-count` | `1` | New-session attempts before giving up |
