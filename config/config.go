@@ -19,6 +19,9 @@ type Session struct {
 	Container     string             `json:"container,omitempty"`
 	ContainerInfo *session.Container `json:"containerInfo,omitempty"`
 	VNC           bool               `json:"vnc"`
+	Bidi          bool               `json:"bidi"`
+	Cdp           bool               `json:"cdp"`
+	HAR           bool               `json:"har"`
 	Screen        string             `json:"screen"`
 	Caps          session.Caps       `json:"caps"`
 	Started       time.Time          `json:"started"`
@@ -45,6 +48,7 @@ type State struct {
 	Used     int      `json:"used"`
 	Queued   int      `json:"queued"`
 	Pending  int      `json:"pending"`
+	Shedding bool     `json:"shedding"`
 	Browsers Browsers `json:"browsers"`
 }
 
@@ -172,10 +176,10 @@ func (config *Config) Find(name string, version string) (*Browser, string, bool)
 }
 
 // State - get current state
-func (config *Config) State(sessions *session.Map, limit, queued, pending int) *State {
+func (config *Config) State(sessions *session.Map, limit, queued, pending int, shedding bool) *State {
 	config.lock.RLock()
 	defer config.lock.RUnlock()
-	state := &State{limit, 0, queued, pending, make(Browsers)}
+	state := &State{limit, 0, queued, pending, shedding, make(Browsers)}
 	for n, b := range config.Browsers {
 		state.Browsers[n] = make(Version)
 		for v := range b.Versions {
@@ -206,6 +210,9 @@ func (config *Config) State(sessions *session.Map, limit, queued, pending int) *
 			ID:            id,
 			ContainerInfo: ctr,
 			VNC:           vnc,
+			Bidi:          session.HostPort.Bidi != "",
+			Cdp:           session.HostPort.Devtools != "",
+			HAR:           session.Caps.HAR,
 			Screen:        session.Caps.ScreenResolution,
 			Caps:          session.Caps,
 			Started:       session.Started,

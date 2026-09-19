@@ -435,7 +435,7 @@ func handler() http.Handler {
 			}
 			return
 		}
-		_ = json.NewEncoder(w).Encode(conf.State(sessions, limit, queue.Queued(), queue.Pending()))
+		_ = json.NewEncoder(w).Encode(conf.State(sessions, limit, queue.Queued(), queue.Pending(), queue.Congested()))
 	})
 	root.HandleFunc(paths.Rescan, rescan)
 	root.HandleFunc(paths.Ping, ping)
@@ -527,7 +527,7 @@ func rescan(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("[-] [RESCAN] [%s] [%s]", user, remote)
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(conf.State(sessions, limit, queue.Queued(), queue.Pending()).Browsers)
+	_ = json.NewEncoder(w).Encode(conf.State(sessions, limit, queue.Queued(), queue.Pending(), queue.Congested()).Browsers)
 }
 
 func harFiles(w http.ResponseWriter, r *http.Request) {

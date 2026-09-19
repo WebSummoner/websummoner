@@ -69,7 +69,7 @@ func TestConfigEmptyState(t *testing.T) {
 	conf := config.NewConfig()
 	_ = conf.Load(confFile, testLogConf)
 
-	state := conf.State(session.NewMap(), 0, 0, 0)
+	state := conf.State(session.NewMap(), 0, 0, 0, false)
 	assert.Equal(t, state.Total, 0)
 	assert.Equal(t, state.Queued, 0)
 	assert.Equal(t, state.Pending, 0)
@@ -84,7 +84,7 @@ func TestConfigNonEmptyState(t *testing.T) {
 
 	sessions := session.NewMap()
 	sessions.Put("0", &session.Session{Caps: session.Caps{Name: "firefox", Version: "49.0"}, Quota: "unknown"})
-	state := conf.State(sessions, 1, 0, 0)
+	state := conf.State(sessions, 1, 0, 0, false)
 	assert.Equal(t, state.Total, 1)
 	assert.Equal(t, state.Queued, 0)
 	assert.Equal(t, state.Pending, 0)
@@ -100,7 +100,7 @@ func TestConfigEmptyVersions(t *testing.T) {
 
 	sessions := session.NewMap()
 	sessions.Put("0", &session.Session{Caps: session.Caps{Name: "firefox", Version: "49.0"}, Quota: "unknown"})
-	state := conf.State(sessions, 1, 0, 0)
+	state := conf.State(sessions, 1, 0, 0, false)
 	assert.Equal(t, state.Total, 1)
 	assert.Equal(t, state.Queued, 0)
 	assert.Equal(t, state.Pending, 0)
@@ -116,7 +116,7 @@ func TestConfigNonEmptyVersions(t *testing.T) {
 
 	sessions := session.NewMap()
 	sessions.Put("0", &session.Session{Caps: session.Caps{Name: "firefox", Version: "49.0"}, Quota: "unknown"})
-	state := conf.State(sessions, 1, 0, 0)
+	state := conf.State(sessions, 1, 0, 0, false)
 	assert.Equal(t, state.Total, 1)
 	assert.Equal(t, state.Queued, 0)
 	assert.Equal(t, state.Pending, 0)
@@ -278,4 +278,48 @@ func TestConfigConcurrentRead(t *testing.T) {
 	}()
 	<-done
 	<-done
+}
+
+func TestStateReportsShedding(t *testing.T) {
+	confFile := configfile(`{}`)
+	defer os.Remove(confFile)
+	conf := config.NewConfig()
+	_ = conf.Load(confFile, testLogConf)
+
+	assert.False(t, conf.State(session.NewMap(), 1, 0, 0, false).Shedding)
+	assert.True(t, conf.State(session.NewMap(), 1, 0, 0, true).Shedding)
+}
+
+func TestStateReportsSessionProtocols(t *testing.T) {
+	confFile := configfile(`{}`)
+	defer os.Remove(confFile)
+	conf := config.NewConfig()
+	_ = conf.Load(confFile, testLogConf)
+
+	sessions := session.NewMap()
+	sessions.Put("0", &session.Session{
+		Quota:    "unknown",
+		Caps:     session.Caps{Name: "chrome", Version: "153.0", HAR: true},
+		HostPort: session.HostPort{Bidi: "172.17.0.2:9222", Devtools: "127.0.0.1:7070", VNC: "127.0.0.1:5900"},
+	})
+	sessions.Put("1", &session.Session{
+		Quota: "unknown",
+		Caps:  session.Caps{Name: "chrome", Version: "153.0"},
+	})
+
+	state := conf.State(sessions, 2, 0, 0, false)
+	byId := map[string]config.Session{}
+	for _, s := range state.Browsers["chrome"]["153.0"]["unknown"].Sessions {
+		byId[s.ID] = s
+	}
+
+	assert.True(t, byId["0"].Bidi)
+	assert.True(t, byId["0"].Cdp)
+	assert.True(t, byId["0"].HAR)
+	assert.True(t, byId["0"].VNC)
+
+	// A session that asked for none of them must not advertise any.
+	assert.False(t, byId["1"].Bidi)
+	assert.False(t, byId["1"].Cdp)
+	assert.False(t, byId["1"].HAR)
 }
