@@ -53,9 +53,7 @@ It also needs the image to run the devtools helper. Verified support:
 
 | Browser | HAR |
 | --- | --- |
-| chrome | Yes |
-| brave | Yes, from the next image build |
-| MicrosoftEdge, opera, yandex | From the next image build, which adds the helper |
+| chrome, brave, MicrosoftEdge, opera, yandex | Yes |
 | firefox, safari | No — no CDP endpoint |
 
 Each entry carries the request method, URL and headers, the response status,
