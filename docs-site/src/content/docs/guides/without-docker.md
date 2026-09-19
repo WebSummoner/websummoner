@@ -67,7 +67,7 @@ By default driver process output is discarded. Add `-capture-driver-logs` to
 append every session's driver log to the main WebSummoner log.
 
 :::note
-[File upload](/guides/file-upload/#running-without-docker) needs
+[File upload](/guides/file-upload/#how-it-works) needs
 `-enable-file-upload` in drivers mode, because some drivers (geckodriver,
 IEDriver) do not implement the `/file` endpoint themselves.
 :::

@@ -22,4 +22,4 @@ docker run -d --name websummoner \
 Browser containers inherit the WebSummoner timezone by default. Tests that
 need a specific zone can request one per session with the `timeZone`
 capability — see the
-[capabilities reference](/reference/capabilities/#per-session-time-zone-timezone).
+[capabilities reference](/reference/capabilities/#time-zone-timezone).
