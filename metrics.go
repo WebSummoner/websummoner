@@ -34,6 +34,10 @@ type MetricsSnapshot struct {
 	SessionsLimit    int
 	QueueDepth       int
 	QueuePending     int
+	QueueCongested   bool
+	RejectedNoWait   uint64
+	RejectedTimeout  uint64
+	RejectedShed     uint64
 	BrowsersInUse    map[string]int // "chrome:152.0" -> count
 	SessionsCreated  uint64
 	SessionsFailed   uint64
@@ -45,11 +49,16 @@ type MetricsSnapshot struct {
 }
 
 // collectMetrics assembles a snapshot from the running hub state.
-func collectMetrics(limit int, queued int, pending int) MetricsSnapshot {
+func collectMetrics(limit int, q queueMetrics) MetricsSnapshot {
+	noWait, timedOut, shed := q.Rejected()
 	m := MetricsSnapshot{
 		SessionsLimit:    limit,
-		QueueDepth:       queued,
-		QueuePending:     pending,
+		QueueDepth:       q.Queued(),
+		QueuePending:     q.Pending(),
+		QueueCongested:   q.Congested(),
+		RejectedNoWait:   noWait,
+		RejectedTimeout:  timedOut,
+		RejectedShed:     shed,
 		SessionsCreated:  metricsSessionsCreated.Load(),
 		SessionsFailed:   metricsSessionsFailed.Load(),
 		SessionsTimedOut: metricsSessionsTimedOut.Load(),
@@ -87,6 +96,16 @@ func renderPrometheus(m MetricsSnapshot) string {
 	writeGauge("websummoner_sessions_limit", "Maximum simultaneous sessions (-limit flag)", m.SessionsLimit)
 	writeGauge("websummoner_queue_depth", "Requests waiting in the queue", m.QueueDepth)
 	writeGauge("websummoner_queue_pending", "Requests being processed", m.QueuePending)
+	// Alert on this rather than on rejection counts: it means a capacity
+	// problem, not a burst.
+	writeGauge("websummoner_queue_congested", "1 when the hub is shedding load (CoDel state)", boolToInt(m.QueueCongested))
+
+	// Split by reason: alerting on the sum hides which failure you have.
+	sb.WriteString("# HELP websummoner_queue_rejected_total New session requests refused by admission control\n")
+	sb.WriteString("# TYPE websummoner_queue_rejected_total counter\n")
+	fmt.Fprintf(&sb, "websummoner_queue_rejected_total{reason=\"no_wait\"} %d\n", m.RejectedNoWait)
+	fmt.Fprintf(&sb, "websummoner_queue_rejected_total{reason=\"timeout\"} %d\n", m.RejectedTimeout)
+	fmt.Fprintf(&sb, "websummoner_queue_rejected_total{reason=\"shed\"} %d\n", m.RejectedShed)
 
 	writeCounter("websummoner_sessions_created_total", "Sessions successfully created", m.SessionsCreated)
 	writeCounter("websummoner_sessions_failed_total", "Sessions that failed to start", m.SessionsFailed)
@@ -116,7 +135,7 @@ func renderPrometheus(m MetricsSnapshot) string {
 // metricsHandler serves the Prometheus /metrics endpoint.
 func metricsHandler(q queueMetrics) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
-		m := collectMetrics(limit, q.Queued(), q.Pending())
+		m := collectMetrics(limit, q)
 		w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
 		_, _ = w.Write([]byte(renderPrometheus(m)))
 	}
@@ -127,4 +146,13 @@ func metricsHandler(q queueMetrics) http.HandlerFunc {
 type queueMetrics interface {
 	Queued() int
 	Pending() int
+	Congested() bool
+	Rejected() (noWait, timeout, shed uint64)
+}
+
+func boolToInt(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }

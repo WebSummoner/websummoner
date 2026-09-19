@@ -220,7 +220,7 @@ func TestProcessExtensionCapabilities(t *testing.T) {
 }
 
 func TestSumUsedTotalGreaterThanPending(t *testing.T) {
-	queue := protect.New(2, false)
+	queue := protect.New(2, false, 0, 0)
 
 	hf := func(_ http.ResponseWriter, _ *http.Request) {
 		time.Sleep(50 * time.Millisecond)

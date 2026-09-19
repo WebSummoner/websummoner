@@ -44,6 +44,8 @@ var (
 	serviceStartupTimeout    time.Duration
 	gracefulPeriod           time.Duration
 	limit                    int
+	queueTimeout             time.Duration
+	queueCongestionTimeout   time.Duration
 	retryCount               int
 	containerNetwork         string
 	sessions                 = session.NewMap()
@@ -78,6 +80,8 @@ func init() {
 	flag.StringVar(&confPath, "conf", "config/browsers.json", "Browsers configuration file")
 	flag.StringVar(&logConfPath, "log-conf", "", "Container logging configuration file")
 	flag.IntVar(&limit, "limit", 5, "Simultaneous container runs")
+	flag.DurationVar(&queueTimeout, "queue-timeout", 0, "How long a new session request may wait for a free slot, and how long a continuously busy queue is tolerated before load shedding starts, e.g. 5m. Zero waits until the client gives up")
+	flag.DurationVar(&queueCongestionTimeout, "queue-congestion-timeout", 0, "Wait budget once the queue has been busy for longer than -queue-timeout. Zero derives one tenth of -queue-timeout")
 	flag.IntVar(&retryCount, "retry-count", 1, "New session attempts retry count")
 	flag.DurationVar(&timeout, "timeout", 60*time.Second, "Session idle timeout in time.Duration format")
 	flag.DurationVar(&maxTimeout, "max-timeout", 1*time.Hour, "Maximum valid session idle timeout in time.Duration format")
@@ -110,7 +114,7 @@ func init() {
 	if ggrHostEnv := os.Getenv("GGR_HOST"); ggrHostEnv != "" {
 		ggrHost = parseGgrHost(ggrHostEnv)
 	}
-	queue = protect.New(limit, disableQueue)
+	queue = protect.New(limit, disableQueue, queueTimeout, queueCongestionTimeout)
 	conf = config.NewConfig()
 	err = conf.Load(confPath, logConfPath)
 	if err != nil {
