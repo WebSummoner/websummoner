@@ -300,7 +300,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		}
 		ID string `json:"sessionId"`
 	}
-	var bidiPort string
+	var bidiURL string
 	location := resp.Header.Get("Location")
 	if location != "" {
 		l, err := url.Parse(location)
@@ -332,7 +332,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(resp.StatusCode)
 			return
 		}
-		bidiPort = bp
+		bidiURL = bp
 		resp.Body = io.NopCloser(bytes.NewReader(newBody))
 		resp.ContentLength = int64(len(newBody))
 		w.WriteHeader(resp.StatusCode)
@@ -358,8 +358,11 @@ func create(w http.ResponseWriter, r *http.Request) {
 			request{r}.session(s.ID).Delete(requestId)
 		}),
 		Started: time.Now()}
-	if bidiPort != "" && startedService.Container != nil {
-		sess.HostPort.Bidi = net.JoinHostPort(startedService.Container.IPAddress, bidiPort)
+	// Dial the container, but keep the driver's own Host: geckodriver-launched
+	// Firefox validates it and rejects the container address.
+	if u, err := url.Parse(bidiURL); err == nil && u.Port() != "" && startedService.Container != nil {
+		sess.HostPort.Bidi = net.JoinHostPort(startedService.Container.IPAddress, u.Port())
+		sess.HostPort.BidiHost = u.Host
 	}
 	var harRecorder *har.Recorder
 	cancelAndRenameFiles := func() {
@@ -558,10 +561,10 @@ func removeVendorOptions(input []byte) []byte {
 
 func processBody(input []byte, host string) ([]byte, string, string, error) {
 	body := make(map[string]interface{})
-	sessionId, bidiPort := "", ""
+	sessionId, bidiURL := "", ""
 	err := json.Unmarshal(input, &body)
 	if err != nil {
-		return nil, sessionId, bidiPort, fmt.Errorf("parse body response: %v", err)
+		return nil, sessionId, bidiURL, fmt.Errorf("parse body response: %v", err)
 	}
 	// handle jsonwp response from older browsers (chrome < 75)
 	if rawId, ok := body["sessionId"]; ok {
@@ -580,7 +583,7 @@ func processBody(input []byte, host string) ([]byte, string, string, error) {
 				"capabilities": body["value"],
 			}}
 			if out, err := json.Marshal(w3c); err == nil {
-				return out, sessionId, bidiPort, nil
+				return out, sessionId, bidiURL, nil
 			}
 		}
 	} else {
@@ -597,9 +600,7 @@ func processBody(input []byte, host string) ([]byte, string, string, error) {
 						// makes clients fail their first WebSocket handshake.
 						// Chromedriver serves BiDi on its WebDriver port, geckodriver on its own.
 						if orig, ok := c["webSocketUrl"].(string); ok {
-							if u, err := url.Parse(orig); err == nil {
-								bidiPort = u.Port()
-							}
+							bidiURL = orig
 							c["webSocketUrl"] = fmt.Sprintf("ws://%s/bidi/%s", host, sessionId)
 						}
 						if bn, _ := c["browserName"].(string); bn != "safari" && bn != "firefox" {
@@ -617,9 +618,9 @@ func processBody(input []byte, host string) ([]byte, string, string, error) {
 	}
 	ret, err := json.Marshal(body)
 	if err != nil {
-		return nil, sessionId, bidiPort, fmt.Errorf("marshal response: %v", err)
+		return nil, sessionId, bidiURL, fmt.Errorf("marshal response: %v", err)
 	}
-	return ret, sessionId, bidiPort, nil
+	return ret, sessionId, bidiURL, nil
 }
 
 func preprocessSessionId(sid string) string {
@@ -1325,7 +1326,7 @@ func bidi(w http.ResponseWriter, r *http.Request) {
 			pr.Out.Header.Del("Origin")
 			pr.Out.URL.Scheme = "http"
 			pr.Out.URL.Host = sess.HostPort.Bidi
-			pr.Out.Host = sess.HostPort.Bidi
+			pr.Out.Host = sess.HostPort.BidiHost
 			pr.Out.URL.Path = "/session/" + sid
 		},
 		ErrorHandler: defaultErrorHandler(requestId),
