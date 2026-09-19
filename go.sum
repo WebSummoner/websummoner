@@ -76,8 +76,8 @@ github.com/sirupsen/logrus v1.9.3/go.mod h1:naHLuLoDiP4jHNo9R0sCBMtWGeIprob74mVs
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
-github.com/websummoner/ggr v0.0.0-20260903081702-6c9c1f33564d h1:Dg4/Vbryf0LwO5ICBwmKiqwmGUL1QeV/IR2XHAUIjQw=
-github.com/websummoner/ggr v0.0.0-20260903081702-6c9c1f33564d/go.mod h1:bldp9RxAb6LvI+IEG23iE2fYTa9uURoi+7vWxFlYTWs=
+github.com/websummoner/ggr v0.0.0-20260919141609-877ec084d69e h1:wriO6rB6pvTtdYheBs0uhfP5vy/cREnZKfEnWKV5P9A=
+github.com/websummoner/ggr v0.0.0-20260919141609-877ec084d69e/go.mod h1:izOmPNsy2VEhWgAP0wZprJNFU4QrUXebQeS1vNnLJjU=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 go.opentelemetry.io/auto/sdk v1.2.1 h1:jXsnJ4Lmnqd11kwkBV2LgLoFMZKizbCi5fNZ/ipaZ64=
 go.opentelemetry.io/auto/sdk v1.2.1/go.mod h1:KRTj+aOaElaLi+wW1kO/DZRXwkF4C5xPbEe3ZiIhN7Y=
