@@ -86,17 +86,16 @@ Measured against the latest image of every browser:
 | opera | 136.0 | Yes |
 | brave | 1.95 | Yes |
 | yandex | 26.8 | Yes |
-| firefox | 156.0 | Not yet — see below |
+| firefox | 156.0 | Yes |
 | safari | 2.54.0 | No — WebKit has no BiDi, and none is advertised |
 
 Chromium-based drivers serve BiDi on the same port as WebDriver, so the hub
 reaches it the moment a session exists.
 
-Firefox is different: geckodriver reports `ws://127.0.0.1:9222/session/<id>`,
-and inside the container `firefox-bin` binds that port to loopback only. The
-hub rewrites the URL correctly but cannot reach the socket, so a BiDi
-connection fails. Fixing it needs the image to expose the remote agent, not a
-change to the hub.
+Firefox is different: geckodriver reports `ws://127.0.0.1:9222/session/<id>`
+and Firefox binds that port to loopback inside the container, so the image
+relays it on the container address. Firefox also validates the `Host` header,
+so the hub dials the relay while presenting the address the driver reported.
 
 ### Downloads
 
