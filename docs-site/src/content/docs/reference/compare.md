@@ -14,6 +14,10 @@ Two of the tools below are the same *kind* of thing as WebSummoner (session
 infrastructure); two are a different kind (test toolchains your tests are
 written with).
 
+For a feature-by-feature checklist against Selenium Grid specifically — which
+capabilities and endpoints work, and which are not implemented yet — see
+[Selenium compatibility](/reference/selenium-compatibility/).
+
 ## vs. other session infrastructure
 
 | | WebSummoner | Selenoid | Moon | Selenium Grid 4 |
