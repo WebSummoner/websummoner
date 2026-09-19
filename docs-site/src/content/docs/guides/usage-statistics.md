@@ -81,6 +81,7 @@ scrape_configs:
 | `websummoner_sessions_limit` | gauge | Maximum simultaneous sessions (`-limit` flag) |
 | `websummoner_queue_depth` | gauge | Requests waiting in the queue |
 | `websummoner_queue_pending` | gauge | Requests being processed |
+| `websummoner_queue_congested` | gauge | `1` while the hub is shedding load — see [Session queue](/guides/session-queue/) |
 | `websummoner_browser_sessions{browser="chrome:152.0"}` | gauge | Sessions per browser/version |
 | `websummoner_sessions_created_total` | counter | Sessions successfully created |
 | `websummoner_sessions_failed_total` | counter | Sessions that failed to start |
@@ -89,6 +90,9 @@ scrape_configs:
 | `websummoner_video_sessions_total` | counter | Sessions with video recording |
 | `websummoner_vnc_sessions_total` | counter | Sessions with VNC enabled |
 | `websummoner_audio_sessions_total` | counter | Sessions with audio recording |
+| `websummoner_queue_rejected_total{reason="no_wait"}` | counter | Refused because the client opted out of waiting |
+| `websummoner_queue_rejected_total{reason="timeout"}` | counter | Refused after waiting the full budget on a healthy queue |
+| `websummoner_queue_rejected_total{reason="shed"}` | counter | Refused early because the grid is saturated |
 
 Example output:
 
@@ -106,6 +110,12 @@ websummoner_queue_depth 0
 - alert: WebSummonerQueueBacklog
   expr: websummoner_queue_depth > 10
   for: 5m
+
+# Prefer this over the backlog alert when -queue-timeout is set: it fires only
+# when the hub has stopped keeping up, not when a burst is being absorbed.
+- alert: WebSummonerSaturated
+  expr: websummoner_queue_congested == 1
+  for: 2m
 
 - alert: WebSummonerHighFailureRate
   expr: rate(websummoner_sessions_failed_total[5m]) > 0.1

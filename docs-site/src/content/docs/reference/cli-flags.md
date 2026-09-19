@@ -18,8 +18,8 @@ All flags go to the `websummoner` binary (or after the image name when using
 | `-disable-queue` | `false` | Disable the wait queue (fail instead of waiting when `-limit` is reached) |
 | `-version` | — | Print version and exit |
 
-The `/metrics` endpoint is always available (no flag needed) — see
-[Usage statistics](/guides/usage-statistics/#prometheus-metrics).
+The `/metrics` endpoint is always available (no flag needed) — see [Usage
+statistics](/guides/usage-statistics/#prometheus-metrics).
 
 ## Timeouts
 
@@ -28,9 +28,21 @@ The `/metrics` endpoint is always available (no flag needed) — see
 | `-timeout` | `1m0s` | Session idle timeout |
 | `-max-timeout` | `1h0m0s` | Upper bound for per-session `sessionTimeout` capability |
 | `-session-attempt-timeout` | `30s` | Timeout for a single new-session attempt |
+| `-queue-timeout` | — | Wait budget for a new session, and the interval a busy queue is tolerated — see [Session queue](/guides/session-queue/) |
+| `-queue-congestion-timeout` | `-queue-timeout` / 10 | Wait budget once the grid is shedding |
 | `-session-delete-timeout` | `30s` | Timeout for deleting a session |
 | `-service-startup-timeout` | `30s` | Timeout for a browser container/driver to start |
 | `-graceful-period` | `5m0s` | Graceful shutdown period (finish live sessions) |
+
+## Queue behaviour
+
+`-queue-timeout` enables admission control: a request that has queued too long
+is refused with `429` instead of waiting forever, and the hub shortens that
+budget once it detects it has stopped keeping up. Both numbers derive from that
+one flag.
+
+See [Session queue](/guides/session-queue/) for how the two states work, a
+worked example, and how to tell the two kinds of `429` apart.
 
 ## Video and logs
 
@@ -55,9 +67,9 @@ The `/metrics` endpoint is always available (no flag needed) — see
 
 ## S3 upload
 
-Only available in binaries built with S3 support (the release binaries and
-the standard Docker image include it). See
-[Uploading files to S3](/guides/s3-upload/) for a full walkthrough.
+Only available in binaries built with S3 support (the release binaries and the
+standard Docker image include it). See [Uploading files to
+S3](/guides/s3-upload/) for a full walkthrough.
 
 | Flag | Default | Description |
 | --- | --- | --- |
