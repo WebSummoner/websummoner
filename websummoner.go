@@ -358,8 +358,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 			request{r}.session(s.ID).Delete(requestId)
 		}),
 		Started: time.Now()}
-	// Dial the container, but keep the driver's own Host: geckodriver-launched
-	// Firefox validates it and rejects the container address.
+	// Dial the container, keep the driver's Host: Firefox validates it.
 	if u, err := url.Parse(bidiURL); err == nil && u.Port() != "" && startedService.Container != nil {
 		sess.HostPort.Bidi = net.JoinHostPort(startedService.Container.IPAddress, u.Port())
 		sess.HostPort.BidiHost = u.Host
@@ -822,8 +821,7 @@ func reverseProxy(hostFn func(sess *session.Session) string, status string) func
 				Rewrite: func(pr *httputil.ProxyRequest) {
 					pr.SetXForwarded()
 					r := pr.Out
-					// CDP answers 403 to an upgrade carrying an Origin, and this
-					// hop is hub to container, where Origin means nothing.
+					// CDP answers 403 to an upgrade carrying an Origin.
 					r.Header.Del("Origin")
 					r.URL.Scheme = "http"
 					r.URL.Host = hostFn(sess)

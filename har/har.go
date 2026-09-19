@@ -1,5 +1,4 @@
-// Package har records a session's network traffic as a HAR 1.2 log by
-// subscribing to the CDP Network domain.
+// Package har records a session's network traffic as a HAR 1.2 log over CDP.
 package har
 
 import (
@@ -114,8 +113,8 @@ type Recorder struct {
 	closed sync.Once
 }
 
-// Start subscribes to Network events over the hub's own devtools proxy, which
-// strips the Origin that CDP refuses and x/net/websocket always sends.
+// Start goes through the hub's devtools proxy, which strips the Origin that CDP
+// refuses and x/net/websocket always sends.
 func Start(hubHostPort, sessionId, path, version string) (*Recorder, error) {
 	url := fmt.Sprintf("ws://%s/devtools/%s/", hubHostPort, sessionId)
 	conn, err := websocket.Dial(url, "", "http://"+hubHostPort)
@@ -129,8 +128,7 @@ func Start(hubHostPort, sessionId, path, version string) (*Recorder, error) {
 		entries: map[string]*Entry{},
 		done:    make(chan struct{}),
 	}
-	// The devtools endpoint is browser-level, where no page events arrive, so
-	// attach to page targets and enable Network on each of them.
+	// Browser-level endpoint: no page events until targets are attached.
 	autoAttach := `{"id":1,"method":"Target.setAutoAttach","params":{"autoAttach":true,"waitForDebuggerOnStart":false,"flatten":true}}`
 	if err := websocket.Message.Send(conn, autoAttach); err != nil {
 		_ = conn.Close()
@@ -216,7 +214,7 @@ func (r *Recorder) apply(msg cdpMessage) {
 	}
 }
 
-// Close stops recording and writes the HAR file. Safe to call more than once.
+// Close stops recording and writes the file; safe to call twice.
 func (r *Recorder) Close() error {
 	var err error
 	r.closed.Do(func() {
