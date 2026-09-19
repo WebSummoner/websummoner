@@ -35,6 +35,7 @@ var (
 	hostname                 string
 	disableDocker            bool
 	disableQueue             bool
+	disableImageDiscovery    bool
 	enableFileUpload         bool
 	listen                   string
 	timeout                  time.Duration
@@ -75,6 +76,7 @@ func init() {
 	var cpu service.CpuLimit
 	flag.BoolVar(&disableDocker, "disable-docker", false, "Disable docker support")
 	flag.BoolVar(&disableQueue, "disable-queue", false, "Disable wait queue")
+	flag.BoolVar(&disableImageDiscovery, "disable-image-discovery", false, "Do not add browsers found from local image labels to the catalog")
 	flag.BoolVar(&enableFileUpload, "enable-file-upload", false, "File upload support")
 	flag.StringVar(&listen, "listen", ":4444", "Network address to accept connections")
 	flag.StringVar(&confPath, "conf", "config/browsers.json", "Browsers configuration file")
@@ -116,9 +118,10 @@ func init() {
 	}
 	queue = protect.New(limit, disableQueue, queueTimeout, queueCongestionTimeout)
 	conf = config.NewConfig()
-	err = conf.Load(confPath, logConfPath)
-	if err != nil {
-		log.Fatalf("[-] [INIT] [%s: %v]", os.Args[0], err)
+	loadConfig := func() {
+		if err := conf.Load(confPath, logConfPath); err != nil {
+			log.Fatalf("[-] [INIT] [%s: %v]", os.Args[0], err)
+		}
 	}
 	onSIGHUP(func() {
 		err := conf.Load(confPath, logConfPath)
@@ -175,6 +178,7 @@ func init() {
 		Privileged:           !disablePrivileged,
 	}
 	if disableDocker {
+		loadConfig()
 		manager = &service.DefaultManager{Environment: &environment, Config: conf}
 		if logOutputDir != "" && captureDriverLogs {
 			log.Fatalf("[-] [INIT] [In drivers mode only one of -capture-driver-logs and -log-output-dir flags is allowed]")
@@ -205,6 +209,10 @@ func init() {
 	if err != nil {
 		log.Fatalf("[-] [INIT] [New docker client: %v]", err)
 	}
+	if !disableImageDiscovery {
+		conf.Discover = config.NewDockerDiscoverer(cli)
+	}
+	loadConfig()
 	manager = &service.DefaultManager{Environment: &environment, Client: cli, Config: conf}
 }
 
@@ -371,7 +379,7 @@ func deleteFileIfExists(requestId uint64, w http.ResponseWriter, r *http.Request
 }
 
 var paths = struct {
-	Video, VNC, Logs, Devtools, Download, Clipboard, File, Ping, Metrics, Status, Error, WdHub, Welcome string
+	Video, VNC, Logs, Devtools, Download, Clipboard, File, Ping, Metrics, Status, Error, WdHub, Welcome, Rescan string
 }{
 	Video:     "/video/",
 	VNC:       "/vnc/",
@@ -385,6 +393,7 @@ var paths = struct {
 	Metrics:   "/metrics",
 	Error:     "/error",
 	WdHub:     "/wd/hub",
+	Rescan:    "/browsers/rescan",
 	Welcome:   "/",
 }
 
@@ -414,6 +423,7 @@ func handler() http.Handler {
 		}
 		_ = json.NewEncoder(w).Encode(conf.State(sessions, limit, queue.Queued(), queue.Pending()))
 	})
+	root.HandleFunc(paths.Rescan, rescan)
 	root.HandleFunc(paths.Ping, ping)
 	root.HandleFunc(paths.Metrics, metricsHandler(queue))
 	root.Handle(paths.VNC, websocket.Handler(vnc))
@@ -483,4 +493,23 @@ func run() error {
 		}
 	}
 	return nil
+}
+
+// rescan reloads the catalog: the configuration file plus, when enabled, a
+// fresh scan of local image labels. Same work SIGHUP does, reachable from a
+// deploy script that has just pulled an image.
+func rescan(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	user, remote := info.RequestInfo(r)
+	if err := conf.Load(confPath, logConfPath); err != nil {
+		log.Printf("[-] [RESCAN_FAILED] [%s] [%s] [%v]", user, remote, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	log.Printf("[-] [RESCAN] [%s] [%s]", user, remote)
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(conf.State(sessions, limit, queue.Queued(), queue.Pending()).Browsers)
 }

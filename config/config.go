@@ -77,6 +77,8 @@ type Config struct {
 	LastReloadTime time.Time
 	Browsers       map[string]Versions
 	ContainerLogs  *container.LogConfig
+	// Discover contributes browsers found by scanning the host; the file wins.
+	Discover Discoverer
 }
 
 // NewConfig creates new config
@@ -99,14 +101,32 @@ func loadJSON(filename string, v interface{}) error {
 func (config *Config) Load(browsers, containerLogs string) error {
 	log.Println("[-] [INIT] [Loading configuration files...]")
 	br := make(map[string]Versions)
-	err := loadJSON(browsers, &br)
-	if err != nil {
-		return fmt.Errorf("browsers config: %v", err)
+	fileErr := loadJSON(browsers, &br)
+	switch {
+	case fileErr == nil:
+		log.Printf("[-] [INIT] [Loaded configuration from %s]", browsers)
+	case config.Discover != nil:
+		// Discovery alone is valid; fatal only if the scan finds nothing too.
+		log.Printf("[-] [INIT] [No browsers configuration at %s: %v]", browsers, fileErr)
+	default:
+		return fmt.Errorf("browsers config: %v", fileErr)
 	}
-	log.Printf("[-] [INIT] [Loaded configuration from %s]", browsers)
+	if config.Discover != nil {
+		discovered, err := config.Discover()
+		if err != nil {
+			// A failing scan must not empty a catalog the file filled.
+			log.Printf("[-] [INIT] [Browser image discovery failed: %v]", err)
+		} else {
+			log.Printf("[-] [INIT] [Discovered %d browser(s) from image labels]", len(discovered))
+			br = merge(discovered, br)
+		}
+	}
+	if fileErr != nil && len(br) == 0 {
+		return fmt.Errorf("browsers config: %v, and no browser images discovered", fileErr)
+	}
 	cl := &container.LogConfig{}
 	if containerLogs != "" {
-		err = loadJSON(containerLogs, cl)
+		err := loadJSON(containerLogs, cl)
 		if err != nil {
 			return fmt.Errorf("log config: %v", err)
 		}
