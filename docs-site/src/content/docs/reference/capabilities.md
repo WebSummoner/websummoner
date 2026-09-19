@@ -128,6 +128,16 @@ added as a container label automatically.
 Go duration format (`30m`, `10s`, `1h5m`); values above the `-max-timeout`
 flag are clamped to it.
 
+### HAR capture — `enableHAR`
+
+Records the session's network traffic as a HAR 1.2 file. Chromium-only, and
+requires the hub to run with `-har-output-dir`. `harName` sets the file name;
+without it the session id is used. See [HAR capture](/guides/har-capture/).
+
+```json
+{"websummoner:options": {"enableHAR": true, "harName": "checkout.har"}}
+```
+
 ### Time zone — `timeZone`
 
 ```json

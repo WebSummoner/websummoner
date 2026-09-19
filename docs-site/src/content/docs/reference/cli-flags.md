@@ -51,6 +51,7 @@ worked example, and how to tell the two kinds of `429` apart.
 | --- | --- | --- |
 | `-video-output-dir` | `video` | Directory for recorded video files |
 | `-video-recorder-image` | `websummoner/video-recorder:latest-release` | Image used to record video |
+| `-har-output-dir` | — | Directory for HAR files; unset disables [HAR capture](/guides/har-capture/) |
 | `-log-output-dir` | — | Directory for saved session logs |
 | `-save-all-logs` | `false` | Save logs for every session, ignoring capabilities |
 | `-capture-driver-logs` | `false` | Add driver process logs to WebSummoner output (drivers mode only) |
