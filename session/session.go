@@ -120,6 +120,7 @@ type HostPort struct {
 	Clipboard  string
 	VNC        string
 	Devtools   string
+	Bidi       string
 }
 
 // Map - session uuid to sessions mapping

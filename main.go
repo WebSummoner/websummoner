@@ -379,12 +379,13 @@ func deleteFileIfExists(requestId uint64, w http.ResponseWriter, r *http.Request
 }
 
 var paths = struct {
-	Video, VNC, Logs, Devtools, Download, Clipboard, File, Ping, Metrics, Status, Error, WdHub, Welcome, Rescan string
+	Video, VNC, Logs, Devtools, Bidi, Download, Clipboard, File, Ping, Metrics, Status, Error, WdHub, Welcome, Rescan string
 }{
 	Video:     "/video/",
 	VNC:       "/vnc/",
 	Logs:      "/logs/",
 	Devtools:  "/devtools/",
+	Bidi:      "/bidi/",
 	Download:  "/download/",
 	Clipboard: "/clipboard/",
 	Status:    "/status",
@@ -432,6 +433,7 @@ func handler() http.Handler {
 	root.HandleFunc(paths.Download, reverseProxy(func(sess *session.Session) string { return sess.HostPort.Fileserver }, "DOWNLOADING_FILE"))
 	root.HandleFunc(paths.Clipboard, reverseProxy(func(sess *session.Session) string { return sess.HostPort.Clipboard }, "CLIPBOARD"))
 	root.HandleFunc(paths.Devtools, reverseProxy(func(sess *session.Session) string { return sess.HostPort.Devtools }, "DEVTOOLS"))
+	root.HandleFunc(paths.Bidi, bidi)
 	if enableFileUpload {
 		root.HandleFunc(paths.File, fileUpload)
 	}

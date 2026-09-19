@@ -11,7 +11,7 @@ import (
 func TestProcessBodyNoCdpForSafariAndFirefox(t *testing.T) {
 	for _, bn := range []string{"safari", "firefox"} {
 		body := fmt.Sprintf(`{"value": {"capabilities": {"browserName": "%s"}, "sessionId": "abc"}}`, bn)
-		out, _, err := processBody([]byte(body), "example.com:4444")
+		out, _, _, err := processBody([]byte(body), "example.com:4444")
 		assert.NoError(t, err)
 		assert.False(t, strings.Contains(string(out), "se:cdp"), bn)
 	}
@@ -19,7 +19,7 @@ func TestProcessBodyNoCdpForSafariAndFirefox(t *testing.T) {
 
 func TestProcessBodyCdpForChromium(t *testing.T) {
 	body := `{"value": {"capabilities": {"browserName": "chrome"}, "sessionId": "abc"}}`
-	out, _, err := processBody([]byte(body), "example.com:4444")
+	out, _, _, err := processBody([]byte(body), "example.com:4444")
 	assert.NoError(t, err)
 	assert.True(t, strings.Contains(string(out), "se:cdp"))
 }
@@ -62,14 +62,14 @@ func TestProcessBodyMissingSessionIdDoesNotPanic(t *testing.T) {
 		`{"value": {"capabilities": {}}}`,
 		`{"value": {"capabilities": {}, "sessionId": 42}}`,
 	} {
-		_, _, err := processBody([]byte(body), "localhost:4444")
+		_, _, _, err := processBody([]byte(body), "localhost:4444")
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "sessionId")
 	}
 }
 
 func TestProcessBodyValidW3CResponse(t *testing.T) {
-	out, sessionId, err := processBody([]byte(`{"value": {"capabilities": {"browserVersion": "152.0"}, "sessionId": "abc"}}`), "example.com:4444")
+	out, sessionId, _, err := processBody([]byte(`{"value": {"capabilities": {"browserVersion": "152.0"}, "sessionId": "abc"}}`), "example.com:4444")
 	assert.NoError(t, err)
 	assert.Equal(t, "abc", sessionId)
 	assert.True(t, strings.Contains(string(out), "se:cdp"))
@@ -78,17 +78,42 @@ func TestProcessBodyValidW3CResponse(t *testing.T) {
 func TestProcessBodyJsonwpErrorIsNotASession(t *testing.T) {
 	// operadriver replies with HTTP 200 even on failure
 	body := `{"sessionId":"4ad6392e","status":33,"value":{"message":"session not created"}}`
-	_, sessionId, err := processBody([]byte(body), "localhost:4444")
+	_, sessionId, _, err := processBody([]byte(body), "localhost:4444")
 	assert.NoError(t, err)
 	assert.Equal(t, "", sessionId)
 }
 
 func TestProcessBodyJsonwpSuccess(t *testing.T) {
 	body := `{"sessionId":"abc123","status":0,"value":{"browserName":"opera"}}`
-	out, sessionId, err := processBody([]byte(body), "localhost:4444")
+	out, sessionId, _, err := processBody([]byte(body), "localhost:4444")
 	assert.NoError(t, err)
 	assert.Equal(t, "abc123", sessionId)
 	// JSONWP replies are wrapped in the W3C envelope modern clients expect
 	assert.Contains(t, string(out), `"sessionId":"abc123"`)
 	assert.Contains(t, string(out), `"capabilities":{"browserName":"opera"}`)
+}
+
+func TestProcessBodyRewritesBiDiUrl(t *testing.T) {
+	body := `{"value": {"capabilities": {"browserName": "firefox",
+	  "webSocketUrl": "ws://172.17.0.3:4444/session/abc"}, "sessionId": "abc"}}`
+	out, _, _, err := processBody([]byte(body), "example.com:4444")
+	assert.NoError(t, err)
+	assert.Contains(t, string(out), `"webSocketUrl":"ws://example.com:4444/bidi/abc"`)
+	assert.NotContains(t, string(out), "172.17.0.3")
+}
+
+func TestProcessBodyDoesNotInventBiDiUrl(t *testing.T) {
+	for _, bn := range []string{"safari", "chrome", "firefox"} {
+		body := fmt.Sprintf(`{"value": {"capabilities": {"browserName": "%s"}, "sessionId": "abc"}}`, bn)
+		out, _, _, err := processBody([]byte(body), "example.com:4444")
+		assert.NoError(t, err)
+		assert.NotContains(t, string(out), "webSocketUrl", bn)
+	}
+}
+
+func TestProcessBodyIgnoresNonStringBiDiUrl(t *testing.T) {
+	body := `{"value": {"capabilities": {"browserName": "chrome", "webSocketUrl": true}, "sessionId": "abc"}}`
+	out, _, _, err := processBody([]byte(body), "example.com:4444")
+	assert.NoError(t, err)
+	assert.NotContains(t, string(out), "/bidi/")
 }

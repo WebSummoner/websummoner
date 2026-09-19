@@ -299,6 +299,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		}
 		ID string `json:"sessionId"`
 	}
+	var bidiPort string
 	location := resp.Header.Get("Location")
 	if location != "" {
 		l, err := url.Parse(location)
@@ -322,7 +323,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(resp.StatusCode)
 			return
 		}
-		newBody, sessionId, err := processBody(body, r.Host)
+		newBody, sessionId, bp, err := processBody(body, r.Host)
 		if err != nil {
 			log.Printf("[%d] [ERROR_PROCESSING_RESPONSE] [%v]", requestId, err)
 			queue.Drop()
@@ -330,6 +331,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(resp.StatusCode)
 			return
 		}
+		bidiPort = bp
 		resp.Body = io.NopCloser(bytes.NewReader(newBody))
 		resp.ContentLength = int64(len(newBody))
 		w.WriteHeader(resp.StatusCode)
@@ -355,6 +357,9 @@ func create(w http.ResponseWriter, r *http.Request) {
 			request{r}.session(s.ID).Delete(requestId)
 		}),
 		Started: time.Now()}
+	if bidiPort != "" && startedService.Container != nil {
+		sess.HostPort.Bidi = net.JoinHostPort(startedService.Container.IPAddress, bidiPort)
+	}
 	cancelAndRenameFiles := func() {
 		cancel()
 		sessionId := preprocessSessionId(s.ID)
@@ -528,12 +533,12 @@ func removeVendorOptions(input []byte) []byte {
 	return ret
 }
 
-func processBody(input []byte, host string) ([]byte, string, error) {
+func processBody(input []byte, host string) ([]byte, string, string, error) {
 	body := make(map[string]interface{})
-	sessionId := ""
+	sessionId, bidiPort := "", ""
 	err := json.Unmarshal(input, &body)
 	if err != nil {
-		return nil, sessionId, fmt.Errorf("parse body response: %v", err)
+		return nil, sessionId, bidiPort, fmt.Errorf("parse body response: %v", err)
 	}
 	// handle jsonwp response from older browsers (chrome < 75)
 	if rawId, ok := body["sessionId"]; ok {
@@ -552,7 +557,7 @@ func processBody(input []byte, host string) ([]byte, string, error) {
 				"capabilities": body["value"],
 			}}
 			if out, err := json.Marshal(w3c); err == nil {
-				return out, sessionId, nil
+				return out, sessionId, bidiPort, nil
 			}
 		}
 	} else {
@@ -562,11 +567,18 @@ func processBody(input []byte, host string) ([]byte, string, error) {
 					if c, ok := raw.(map[string]interface{}); ok {
 						si, ok := v["sessionId"].(string)
 						if !ok {
-							return nil, "", fmt.Errorf("missing or invalid sessionId in driver response")
+							return nil, "", "", fmt.Errorf("missing or invalid sessionId in driver response")
 						}
 						sessionId = si
 						// WebKit and Gecko have no CDP endpoint; advertising one
 						// makes clients fail their first WebSocket handshake.
+						// Chromedriver serves BiDi on its WebDriver port, geckodriver on its own.
+						if orig, ok := c["webSocketUrl"].(string); ok {
+							if u, err := url.Parse(orig); err == nil {
+								bidiPort = u.Port()
+							}
+							c["webSocketUrl"] = fmt.Sprintf("ws://%s/bidi/%s", host, sessionId)
+						}
 						if bn, _ := c["browserName"].(string); bn != "safari" && bn != "firefox" {
 							c["se:cdp"] = fmt.Sprintf("ws://%s/devtools/%s/", host, sessionId)
 							if rbv, ok := c["browserVersion"]; ok {
@@ -582,9 +594,9 @@ func processBody(input []byte, host string) ([]byte, string, error) {
 	}
 	ret, err := json.Marshal(body)
 	if err != nil {
-		return nil, sessionId, fmt.Errorf("marshal response: %v", err)
+		return nil, sessionId, bidiPort, fmt.Errorf("marshal response: %v", err)
 	}
-	return ret, sessionId, nil
+	return ret, sessionId, bidiPort, nil
 }
 
 func preprocessSessionId(sid string) string {
@@ -1258,4 +1270,37 @@ func onTimeout(t time.Duration, f func()) chan struct{} {
 		}
 	}(cancel)
 	return cancel
+}
+
+// bidi proxies the BiDi socket; the driver serves it on its WebDriver port.
+func bidi(w http.ResponseWriter, r *http.Request) {
+	requestId := serial()
+	sid, _ := splitRequestPath(r.URL.Path)
+	sess, ok := sessions.Get(sid)
+	if !ok {
+		jsonerror.InvalidSessionID(fmt.Errorf("unknown session %s", sid)).Encode(w)
+		log.Printf("[%d] [SESSION_NOT_FOUND] [%s]", requestId, sid)
+		return
+	}
+	select {
+	case <-sess.TimeoutCh:
+	default:
+		close(sess.TimeoutCh)
+	}
+	sess.TimeoutCh = onTimeout(sess.Timeout, func() {
+		request{r}.session(sid).Delete(requestId)
+	})
+	log.Printf("[%d] [BIDI] [%s]", requestId, sid)
+	(&httputil.ReverseProxy{
+		Rewrite: func(pr *httputil.ProxyRequest) {
+			pr.SetXForwarded()
+			// geckodriver allow-lists Host and Origin; the hub is in neither.
+			pr.Out.Header.Del("Origin")
+			pr.Out.URL.Scheme = "http"
+			pr.Out.URL.Host = sess.HostPort.Bidi
+			pr.Out.Host = sess.HostPort.Bidi
+			pr.Out.URL.Path = "/session/" + sid
+		},
+		ErrorHandler: defaultErrorHandler(requestId),
+	}).ServeHTTP(w, r)
 }
