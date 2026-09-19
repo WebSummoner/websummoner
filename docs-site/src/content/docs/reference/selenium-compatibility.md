@@ -33,7 +33,7 @@ behind on.
 | Capability | Purpose | WebSummoner |
 | --- | --- | --- |
 | `se:cdp`, `se:cdpVersion` | Chrome DevTools endpoint returned to the client | Yes — rewritten to the hub's own `/devtools/<id>/` address |
-| `webSocketUrl` | Opt in to [WebDriver BiDi](https://www.selenium.dev/documentation/webdriver/bidi/) | **No** — see [BiDi](#webdriver-bidi) |
+| `webSocketUrl` | Opt in to [WebDriver BiDi](https://www.selenium.dev/documentation/webdriver/bidi/) | Yes — rewritten to the hub's own `/bidi/<id>` address, see [BiDi](#webdriver-bidi) |
 | `se:downloadsEnabled` | Enable Grid-managed downloads | **No** — WebSummoner has downloads under its own URL, see [Downloads](#downloads) |
 | `se:vnc`, `se:noVncUrl` | Advertise a live-view URL in the returned capabilities | **No** — VNC works, it is simply not advertised |
 | `selenoid:options` / `websummoner:options` | Video, VNC, logs, timeouts, container tuning | Yes — see [Capabilities](/reference/capabilities/) |
@@ -52,6 +52,7 @@ handshake.
 | `/graphql` | Grid's own query API | **No** — `/status` and `/metrics` cover similar ground |
 | `/metrics` | Not built in | Yes — Prometheus, always on |
 | `/video/`, `/logs/`, `/vnc/`, `/clipboard/`, `/download/` | Partly, and newer | Yes |
+| `/bidi/<session-id>` | Grid proxies BiDi on its own routes | Yes |
 
 ## Grid features
 
@@ -67,18 +68,35 @@ handshake.
 | Node registration / multi-node routing | **No** in the hub — put [ggr](/reference/compare/) in front of several hubs |
 | Relay to Appium or a cloud provider | **No** |
 
-## Gaps in detail
+## Protocol endpoints in detail
 
 ### WebDriver BiDi
 
-A client that sets `webSocketUrl: true` gets a socket address back from the
-driver pointing at the browser container, which is unreachable from outside the
-hub's network. WebSummoner does not rewrite it the way it already rewrites
-`se:cdp`, so BiDi sessions do not connect.
+Set `webSocketUrl: true` and the hub rewrites the address the driver returns to
+its own `/bidi/<session-id>`, then proxies the socket. No extra flag, and no
+capability is invented: a driver that does not answer with a `webSocketUrl`
+leaves the client correctly seeing none.
 
-This matters most for Firefox, where CDP is being retired upstream and BiDi is
-the replacement, so Firefox currently has no low-level protocol through the
-hub.
+Measured against the latest image of every browser:
+
+| Browser | Version tested | BiDi |
+| --- | --- | --- |
+| chrome | 153.0 | Yes |
+| MicrosoftEdge | 153.0 | Yes |
+| opera | 136.0 | Yes |
+| brave | 1.95 | Yes |
+| yandex | 26.8 | Yes |
+| firefox | 156.0 | Not yet — see below |
+| safari | 2.54.0 | No — WebKit has no BiDi, and none is advertised |
+
+Chromium-based drivers serve BiDi on the same port as WebDriver, so the hub
+reaches it the moment a session exists.
+
+Firefox is different: geckodriver reports `ws://127.0.0.1:9222/session/<id>`,
+and inside the container `firefox-bin` binds that port to loopback only. The
+hub rewrites the URL correctly but cannot reach the socket, so a BiDi
+connection fails. Fixing it needs the image to expose the remote agent, not a
+change to the hub.
 
 ### Downloads
 
