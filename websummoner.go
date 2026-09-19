@@ -30,6 +30,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/websummoner/websummoner/event"
+	"github.com/websummoner/websummoner/har"
 	"github.com/websummoner/websummoner/jsonerror"
 	"github.com/websummoner/websummoner/service"
 	"github.com/websummoner/websummoner/session"
@@ -360,7 +361,15 @@ func create(w http.ResponseWriter, r *http.Request) {
 	if bidiPort != "" && startedService.Container != nil {
 		sess.HostPort.Bidi = net.JoinHostPort(startedService.Container.IPAddress, bidiPort)
 	}
+	var harRecorder *har.Recorder
 	cancelAndRenameFiles := func() {
+		if harRecorder != nil {
+			if err := harRecorder.Close(); err != nil {
+				log.Printf("[%d] [HAR_ERROR] [%v]", requestId, err)
+			} else {
+				log.Printf("[%d] [HAR_SAVED] [%s]", requestId, s.ID)
+			}
+		}
 		cancel()
 		sessionId := preprocessSessionId(s.ID)
 		e := event.Event{
@@ -412,6 +421,20 @@ func create(w http.ResponseWriter, r *http.Request) {
 	}
 	sess.Cancel = cancelAndRenameFiles
 	sessions.Put(s.ID, sess)
+	if caps.HAR && harOutputDir != "" && sess.HostPort.Devtools != "" {
+		name := caps.HARName
+		if name == "" {
+			name = preprocessSessionId(s.ID) + harFileExtension
+		}
+		if !isSafeFileName(name) {
+			log.Printf("[%d] [BAD_HAR_NAME] [%s]", requestId, name)
+		} else if rec, err := har.Start(r.Host, s.ID, filepath.Join(harOutputDir, name), gitRevision); err != nil {
+			log.Printf("[%d] [HAR_ERROR] [%v]", requestId, err)
+		} else {
+			harRecorder = rec
+			log.Printf("[%d] [HAR_STARTED] [%s] [%s]", requestId, s.ID, name)
+		}
+	}
 	queue.Create()
 	log.Printf("[%d] [SESSION_CREATED] [%s] [%d] [%.2fs]", requestId, s.ID, i, info.SecondsSince(sessionStartTime))
 	metricsSessionsCreated.Add(1)
@@ -609,6 +632,7 @@ func preprocessSessionId(sid string) string {
 const (
 	videoFileExtension = ".mp4"
 	logFileExtension   = ".log"
+	harFileExtension   = ".har"
 )
 
 var (
@@ -797,6 +821,9 @@ func reverseProxy(hostFn func(sess *session.Session) string, status string) func
 				Rewrite: func(pr *httputil.ProxyRequest) {
 					pr.SetXForwarded()
 					r := pr.Out
+					// CDP answers 403 to an upgrade carrying an Origin, and this
+					// hop is hub to container, where Origin means nothing.
+					r.Header.Del("Origin")
 					r.URL.Scheme = "http"
 					r.URL.Host = hostFn(sess)
 					r.URL.Path = remainingPath

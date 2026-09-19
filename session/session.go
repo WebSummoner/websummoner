@@ -33,11 +33,13 @@ type Caps struct {
 	// preserving the historical automatic behavior.
 	Audio                 *bool             `json:"enableAudio,omitempty"`
 	Log                   bool              `json:"enableLog,omitempty"`
+	HAR                   bool              `json:"enableHAR,omitempty"`
 	VideoName             string            `json:"videoName,omitempty"`
 	VideoScreenSize       string            `json:"videoScreenSize,omitempty"`
 	VideoFrameRate        uint16            `json:"videoFrameRate,omitempty"`
 	VideoCodec            string            `json:"videoCodec,omitempty"`
 	LogName               string            `json:"logName,omitempty"`
+	HARName               string            `json:"harName,omitempty"`
 	TestName              string            `json:"name,omitempty"`
 	TimeZone              string            `json:"timeZone,omitempty"`
 	ContainerHostname     string            `json:"containerHostname,omitempty"`

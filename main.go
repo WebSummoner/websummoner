@@ -57,6 +57,7 @@ var (
 	videoOutputDir           string
 	videoRecorderImage       string
 	logOutputDir             string
+	harOutputDir             string
 	saveAllLogs              bool
 	ggrHost                  *ggr.Host
 	conf                     *config.Config
@@ -99,6 +100,7 @@ func init() {
 	flag.StringVar(&videoOutputDir, "video-output-dir", "video", "Directory to save recorded video to")
 	flag.StringVar(&videoRecorderImage, "video-recorder-image", "websummoner/video-recorder:latest-release", "Image to use as video recorder")
 	flag.StringVar(&logOutputDir, "log-output-dir", "", "Directory to save session log to")
+	flag.StringVar(&harOutputDir, "har-output-dir", "", "Directory to save session HAR files to")
 	flag.BoolVar(&saveAllLogs, "save-all-logs", false, "Whether to save all logs without considering capabilities")
 	flag.DurationVar(&gracefulPeriod, "graceful-period", 300*time.Second, "graceful shutdown period in time.Duration format, e.g. 300s or 500ms")
 	flag.Parse()
@@ -145,6 +147,16 @@ func init() {
 			log.Fatalf("[-] [INIT] [Failed to create video output dir %s: %v]", videoOutputDir, err)
 		}
 		log.Printf("[-] [INIT] [Video Dir: %s]", videoOutputDir)
+	}
+	if harOutputDir != "" {
+		harOutputDir, err = filepath.Abs(harOutputDir)
+		if err != nil {
+			log.Fatalf("[-] [INIT] [Invalid HAR output dir %s: %v]", harOutputDir, err)
+		}
+		if err = os.MkdirAll(harOutputDir, os.FileMode(0755)); err != nil {
+			log.Fatalf("[-] [INIT] [Failed to create HAR output dir %s: %v]", harOutputDir, err)
+		}
+		log.Printf("[-] [INIT] [HAR Dir: %s]", harOutputDir)
 	}
 	if logOutputDir != "" {
 		logOutputDir, err = filepath.Abs(logOutputDir)
@@ -379,11 +391,12 @@ func deleteFileIfExists(requestId uint64, w http.ResponseWriter, r *http.Request
 }
 
 var paths = struct {
-	Video, VNC, Logs, Devtools, Bidi, Download, Clipboard, File, Ping, Metrics, Status, Error, WdHub, Welcome, Rescan string
+	Video, VNC, Logs, HAR, Devtools, Bidi, Download, Clipboard, File, Ping, Metrics, Status, Error, WdHub, Welcome, Rescan string
 }{
 	Video:     "/video/",
 	VNC:       "/vnc/",
 	Logs:      "/logs/",
+	HAR:       "/har/",
 	Devtools:  "/devtools/",
 	Bidi:      "/bidi/",
 	Download:  "/download/",
@@ -430,6 +443,7 @@ func handler() http.Handler {
 	root.Handle(paths.VNC, websocket.Handler(vnc))
 	root.HandleFunc(paths.Logs, logs)
 	root.HandleFunc(paths.Video, video)
+	root.HandleFunc(paths.HAR, harFiles)
 	root.HandleFunc(paths.Download, reverseProxy(func(sess *session.Session) string { return sess.HostPort.Fileserver }, "DOWNLOADING_FILE"))
 	root.HandleFunc(paths.Clipboard, reverseProxy(func(sess *session.Session) string { return sess.HostPort.Clipboard }, "CLIPBOARD"))
 	root.HandleFunc(paths.Devtools, reverseProxy(func(sess *session.Session) string { return sess.HostPort.Devtools }, "DEVTOOLS"))
@@ -514,4 +528,21 @@ func rescan(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[-] [RESCAN] [%s] [%s]", user, remote)
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(conf.State(sessions, limit, queue.Queued(), queue.Pending()).Browsers)
+}
+
+func harFiles(w http.ResponseWriter, r *http.Request) {
+	requestId := serial()
+	if harOutputDir == "" {
+		http.Error(w, "HAR capture is disabled", http.StatusNotFound)
+		return
+	}
+	if r.Method == http.MethodDelete {
+		deleteFileIfExists(requestId, w, r, harOutputDir, paths.HAR, "DELETED_HAR_FILE")
+		return
+	}
+	if _, ok := r.URL.Query()[jsonParam]; ok {
+		listFilesAsJson(requestId, w, harOutputDir, "HAR_ERROR")
+		return
+	}
+	http.StripPrefix(paths.HAR, http.FileServer(http.Dir(harOutputDir))).ServeHTTP(w, r)
 }
