@@ -430,7 +430,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		}
 		if !isSafeFileName(name) {
 			log.Printf("[%d] [BAD_HAR_NAME] [%s]", requestId, name)
-		} else if rec, err := har.Start(r.Host, s.ID, filepath.Join(harOutputDir, name), gitRevision); err != nil {
+		} else if rec, err := har.Start(selfAddr(listen), s.ID, filepath.Join(harOutputDir, name), gitRevision); err != nil {
 			log.Printf("[%d] [HAR_ERROR] [%v]", requestId, err)
 		} else {
 			harRecorder = rec
@@ -714,6 +714,19 @@ func isSafeFileName(name string) bool {
 		return false
 	}
 	return name == filepath.Base(name)
+}
+
+// selfAddr is where the hub reaches itself: the client's Host is the published
+// port, which does not exist inside a container.
+func selfAddr(listen string) string {
+	host, port, err := net.SplitHostPort(listen)
+	if err != nil {
+		return listen
+	}
+	if ip := net.ParseIP(host); host == "" || (ip != nil && ip.IsUnspecified()) {
+		host = "127.0.0.1"
+	}
+	return net.JoinHostPort(host, port)
 }
 
 const vendorPrefix = "websummoner"

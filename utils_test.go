@@ -284,3 +284,15 @@ func TestBrowserName(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, caps.BrowserName(), "firefox")
 }
+
+func TestSelfAddr(t *testing.T) {
+	for listen, want := range map[string]string{
+		":4444":          "127.0.0.1:4444",
+		"0.0.0.0:4444":   "127.0.0.1:4444",
+		"[::]:4444":      "127.0.0.1:4444",
+		"10.0.0.5:4444":  "10.0.0.5:4444",
+		"localhost:4444": "localhost:4444",
+	} {
+		assert.Equal(t, want, selfAddr(listen), listen)
+	}
+}
