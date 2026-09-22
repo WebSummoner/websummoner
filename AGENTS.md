@@ -146,7 +146,7 @@ rewrapped the line you were matching against.
 ## Documentation
 
 Docs are an Astro Starlight site in `docs-site/`, not the deleted `docs/*.adoc`
-files. Build with `npm run build` in `node:24`; it should report 30 pages.
+files. Build with `npm run build` in `node:24`; it should report 34 pages.
 
 Hand-written root-relative links are rewritten with the site's `base` by
 `plugins/base-links.mjs`, so write `/reference/cli-flags/`, never

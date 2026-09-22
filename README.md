@@ -45,7 +45,7 @@ New **[rich user interface](https://github.com/WebSummoner/websummoner-ui)** sho
 ### Lightweight and Lightning Fast
 Suitable for personal usage and in big clusters:
 * Consumes **10 times** less memory than Java-based Selenium server under the same load
-* **Small 6 Mb binary** with no external dependencies (no need to install Java)
+* **Small ~10 MB binary** with no external dependencies (no need to install Java)
 * **Browser consumption API** working out of the box
 * Ability to send browser logs to **centralized log storage** (e.g. to the [ELK-stack](https://logz.io/learn/complete-guide-elk-stack/))
 * Fully **isolated** and **reproducible** environment
