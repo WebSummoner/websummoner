@@ -28,7 +28,7 @@ func init() {
 	flag.StringVar(&(s3.AccessKey), "s3-access-key", "", "S3 access key")
 	flag.StringVar(&(s3.SecretKey), "s3-secret-key", "", "S3 secret key")
 	flag.StringVar(&(s3.BucketName), "s3-bucket-name", "", "S3 bucket name")
-	flag.StringVar(&(s3.KeyPattern), "s3-key-pattern", "$fileName", "S3 bucket name")
+	flag.StringVar(&(s3.KeyPattern), "s3-key-pattern", "$fileName", "S3 key pattern for uploaded files")
 	flag.BoolVar(&(s3.ReducedRedundancy), "s3-reduced-redundancy", false, "Use reduced redundancy storage class")
 	flag.BoolVar(&(s3.KeepFiles), "s3-keep-files", false, "Do not remove uploaded files")
 	flag.StringVar(&(s3.IncludeFiles), "s3-include-files", "", "Pattern used to match and include files")
