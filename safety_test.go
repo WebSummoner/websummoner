@@ -41,6 +41,16 @@ func TestAdaptDriverCapabilitiesYandex(t *testing.T) {
 	assert.Contains(t, string(out), `"/usr/bin/yandex-browser"`)
 }
 
+func TestAdaptDriverCapabilitiesKeepsClientOptions(t *testing.T) {
+	in := `{"capabilities":{"alwaysMatch":{"browserName":"brave","goog:chromeOptions":{"binary":"/usr/bin/brave-browser","args":["--window-size=800,600"],"prefs":{"download.default_directory":"/home/selenium/Downloads"}}}}}`
+	out := string(adaptDriverCapabilities([]byte(in), "brave", 3))
+	assert.Contains(t, out, `"/opt/brave.com/brave/brave-browser"`)
+	assert.NotContains(t, out, `"/usr/bin/brave-browser"`)
+	assert.Contains(t, out, `"download.default_directory"`)
+	assert.Contains(t, out, `"--window-size=800,600"`)
+	assert.Less(t, strings.Index(out, "no-sandbox"), strings.Index(out, "--window-size"), "client arguments come after the hub's")
+}
+
 func TestAdaptDriverCapabilitiesPassthrough(t *testing.T) {
 	in := `{"capabilities":{"alwaysMatch":{"browserName":"firefox"}}}`
 	assert.Equal(t, in, string(adaptDriverCapabilities([]byte(in), "firefox", 1)))

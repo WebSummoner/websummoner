@@ -474,26 +474,10 @@ var chromiumExtraArgs = map[string][]string{
 	"yandex": {"--homepage=about:blank", "--no-first-run", "--no-default-browser-check"},
 }
 
-// removeVendorOptions drops vendor blocks and the legacy `version` routing
-// hint before forwarding: modern drivers reject unknown capabilities (#909).
 func adaptDriverCapabilities(input []byte, name string, requestId uint64) []byte {
 	binary, ok := chromiumBinaries[name]
 	if !ok {
 		return input
-	}
-	args := append([]string{"no-sandbox", fmt.Sprintf("--user-data-dir=/tmp/ws-%d", requestId)},
-		chromiumExtraArgs[name]...)
-	options := map[string]interface{}{
-		"binary": binary,
-		"args":   args,
-	}
-	// Opera's own driver still answers in the legacy JSONWP dialect by default,
-	// which a W3C-only client such as Selenium 4 cannot decode — it is the
-	// reason Selenium dropped Opera in 4.3.0. The driver does support W3C, but
-	// only when asked for it explicitly. Harmless on chromedriver, which
-	// ignores the option.
-	if name == "opera" {
-		options["w3c"] = true
 	}
 	var body map[string]interface{}
 	if err := json.Unmarshal(input, &body); err != nil {
@@ -514,6 +498,29 @@ func adaptDriverCapabilities(input []byte, name string, requestId uint64) []byte
 			return input
 		}
 	}
+	options, _ := target["goog:chromeOptions"].(map[string]interface{})
+	if options == nil {
+		options = map[string]interface{}{}
+	}
+	args := append([]string{"no-sandbox", fmt.Sprintf("--user-data-dir=/tmp/ws-%d", requestId)},
+		chromiumExtraArgs[name]...)
+	if clientArgs, ok := options["args"].([]interface{}); ok {
+		for _, a := range clientArgs {
+			if arg, ok := a.(string); ok {
+				args = append(args, arg)
+			}
+		}
+	}
+	options["binary"] = binary
+	options["args"] = args
+	// Opera's own driver still answers in the legacy JSONWP dialect by default,
+	// which a W3C-only client such as Selenium 4 cannot decode — it is the
+	// reason Selenium dropped Opera in 4.3.0. The driver does support W3C, but
+	// only when asked for it explicitly. Harmless on chromedriver, which
+	// ignores the option.
+	if name == "opera" {
+		options["w3c"] = true
+	}
 	target["browserName"] = "chrome"
 	target["goog:chromeOptions"] = options
 	if out, err := json.Marshal(body); err == nil {
@@ -522,6 +529,8 @@ func adaptDriverCapabilities(input []byte, name string, requestId uint64) []byte
 	return input
 }
 
+// removeVendorOptions drops vendor blocks and the legacy `version` routing
+// hint before forwarding: modern drivers reject unknown capabilities (#909).
 func removeVendorOptions(input []byte) []byte {
 	body := make(map[string]interface{})
 	_ = json.Unmarshal(input, &body)

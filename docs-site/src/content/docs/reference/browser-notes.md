@@ -12,9 +12,9 @@ WebSummoner already handles for you, and what your tests need to do.
 | --- | --- | --- | --- | --- |
 | Chrome | `chrome` | Yes | Yes | Accepts `CH_POLICY_` policies |
 | Edge | `MicrosoftEdge` | Yes | Yes | Options go under `ms:edgeOptions` |
-| Opera | `opera` | Yes | Yes | Hub supplies `goog:chromeOptions`; extra window handles |
-| Brave | `brave` | Yes | Yes | Hub supplies `goog:chromeOptions`; Shields; accepts `CH_POLICY_` |
-| Yandex | `yandex` | Yes | Yes | Hub supplies `goog:chromeOptions`; own start page |
+| Opera | `opera` | Yes | Yes | Hub adds to `goog:chromeOptions`; extra window handles |
+| Brave | `brave` | Yes | Yes | Hub adds to `goog:chromeOptions`; Shields; accepts `CH_POLICY_` |
+| Yandex | `yandex` | Yes | Yes | Hub adds to `goog:chromeOptions`; own start page |
 | Firefox | `firefox` | No | Yes | Strict about certificates |
 | WebKit | `safari` | No | No | Cookies, proxies and teardown differ |
 
@@ -25,9 +25,10 @@ published before it lack the helper that serves CDP.
 
 For Opera, Brave and Yandex the hub rewrites the session request: it sets
 `browserName` to `chrome`, points the driver at the real browser binary and
-supplies the start-up arguments each browser needs. It builds
-`goog:chromeOptions` itself, so **arguments and preferences sent by the client
-are not forwarded** to these three browsers.
+adds the start-up arguments each browser needs. Your own `goog:chromeOptions`
+are kept — arguments, `prefs` and extensions reach the browser — with your
+arguments placed after the hub's, so yours win when both set the same switch.
+A `binary` you set is replaced by the hub's.
 
 Chrome and Brave accept Chromium enterprise policies per session through
 `CH_POLICY_<Name>` variables; see
