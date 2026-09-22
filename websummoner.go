@@ -822,12 +822,7 @@ func reverseProxy(hostFn func(sess *session.Session) string, status string) func
 		sid, remainingPath := splitRequestPath(r.URL.Path)
 		sess, ok := sessions.Get(sid)
 		if ok {
-			select {
-			case <-sess.TimeoutCh:
-			default:
-				close(sess.TimeoutCh)
-			}
-			sess.TimeoutCh = onTimeout(sess.Timeout, func() {
+			resetTimeout(sess, func() {
 				request{r}.session(sid).Delete(requestId)
 			})
 			(&httputil.ReverseProxy{
@@ -1311,6 +1306,17 @@ func onTimeout(t time.Duration, f func()) chan struct{} {
 	return cancel
 }
 
+func resetTimeout(sess *session.Session, f func()) {
+	sess.Lock.Lock()
+	defer sess.Lock.Unlock()
+	select {
+	case <-sess.TimeoutCh:
+	default:
+		close(sess.TimeoutCh)
+	}
+	sess.TimeoutCh = onTimeout(sess.Timeout, f)
+}
+
 // bidi proxies the BiDi socket; the driver serves it on its WebDriver port.
 func bidi(w http.ResponseWriter, r *http.Request) {
 	requestId := serial()
@@ -1321,12 +1327,7 @@ func bidi(w http.ResponseWriter, r *http.Request) {
 		log.Printf("[%d] [SESSION_NOT_FOUND] [%s]", requestId, sid)
 		return
 	}
-	select {
-	case <-sess.TimeoutCh:
-	default:
-		close(sess.TimeoutCh)
-	}
-	sess.TimeoutCh = onTimeout(sess.Timeout, func() {
+	resetTimeout(sess, func() {
 		request{r}.session(sid).Delete(requestId)
 	})
 	log.Printf("[%d] [BIDI] [%s]", requestId, sid)
