@@ -190,6 +190,7 @@ func (r *Recorder) apply(msg cdpMessage) {
 			HeadersSize: -1,
 			BodySize:    -1,
 		}
+		e.Response = Response{Headers: []NameValue{}, Cookies: []NameValue{}, HeadersSize: -1, BodySize: -1}
 		r.entries[id] = e
 	case "Network.responseReceived":
 		if e, ok := r.entries[id]; ok {

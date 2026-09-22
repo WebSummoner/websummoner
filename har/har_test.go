@@ -57,6 +57,32 @@ const responseFrame = `{"method":"Network.responseReceived","params":{"requestId
 const finishedFrame = `{"method":"Network.loadingFinished","params":{"requestId":"1",
  "timestamp":1000.25,"encodedDataLength":2048}}`
 
+func TestUnfinishedRequestHasEmptyResponse(t *testing.T) {
+	addr, enabled := fakeDevtools(t, []string{requestFrame})
+	path := filepath.Join(t.TempDir(), "session.har")
+
+	rec, err := Start(addr, "s1", path, "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	<-enabled
+	time.Sleep(200 * time.Millisecond)
+	if err := rec.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	entries := readHAR(t, path)["entries"].([]any)
+	if len(entries) != 1 {
+		t.Fatalf("want 1 entry, got %d", len(entries))
+	}
+	response := entries[0].(map[string]any)["response"].(map[string]any)
+	for _, key := range []string{"headers", "cookies"} {
+		if _, ok := response[key].([]any); !ok {
+			t.Errorf("response.%s should be an array, got %v", key, response[key])
+		}
+	}
+}
+
 func TestRecordsOneEntry(t *testing.T) {
 	addr, enabled := fakeDevtools(t, []string{requestFrame, responseFrame, finishedFrame})
 	path := filepath.Join(t.TempDir(), "session.har")
