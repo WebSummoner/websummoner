@@ -83,7 +83,7 @@ everything else does. Its issue tracker carries the Safari proxy case
 ([selenide#1575](https://github.com/selenide/selenide/issues/1575), closed as
 *not a bug*) — SafariDriver rejects the `proxy` capability, which WebSummoner
 works around for the WebKit image (see
-[Proxies on WebKit](/reference/browser-images/#proxies-on-webkit)).
+[Proxies on WebKit](/reference/browser-notes/#proxies-on-webkit)).
 
 **Choose Playwright** for greenfield JS/TS (or Java/Python/.NET) work when
 you control the stack: the tracing and debugging tooling is excellent and

@@ -39,7 +39,7 @@ prefix that identifies the release users actually track:
 | Chrome | `152` | `152.0.7977.75` | Chrome-for-Testing milestone; chromedriver matches the exact build |
 | Firefox | `155` | `155.0.0`, then `155.0.1` | Mozilla writes a first release as `155.0`; it is tagged `155.0.0` so the ladder matches every other browser. geckodriver is version-independent |
 | Edge | `152` | `152.0.4191.62` | msedgedriver matches the exact build |
-| Opera | `135` | `135.0.5973.76` | driver resolved from the Chromium line Opera ships (Opera N = Chromium N+16), falling back to the newest `operadriver` — see [Opera](/reference/browser-images/#opera) |
+| Opera | `135` | `135.0.5973.76` | driver resolved from the Chromium line Opera ships (Opera N = Chromium N+16), falling back to the newest `operadriver` — see [Opera](/reference/browser-notes/#opera) |
 | Yandex Browser | `26.6` | `26.6.1.1083` | the line itself is major.minor |
 | Brave | `1.94` | `1.94.119` | the line itself is major.minor; chromedriver matches the embedded Chromium |
 | Safari | — | `2.52.6` | full WebKitGTK version only — each release is a substantially different engine, so nothing floats |
@@ -85,7 +85,7 @@ Chromium-based browsers require the driver to match the browser build
 to the embedded Chromium line). Opera is the exception: its own driver
 lags the Chromium it ships, so the image pins the newest `operadriver`
 rather than an exactly-matching chromedriver — see
-[Opera](/reference/browser-images/#opera). Floating tags are
+[Opera](/reference/browser-notes/#opera). Floating tags are
 therefore only safe because every rebuild re-pins the driver to the
 matching version at the same time. A full-version tag always carries the
 driver it was built and tested with.

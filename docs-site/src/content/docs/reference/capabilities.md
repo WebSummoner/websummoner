@@ -69,6 +69,11 @@ browsers in Xvfb without a window manager, `maximize` does not work — use
 `setSize` instead.
 :::
 
+:::note[Brave]
+Brave Shields report a false screen size to web pages. See
+[Brave](/reference/browser-notes/#brave) to read the real value.
+:::
+
 ### Video recording — `enableVideo` and friends
 
 ```json
@@ -154,6 +159,18 @@ Without it, containers inherit the WebSummoner host time zone.
 ```
 
 Appended to the variables set in `browsers.json` — useful for locale tests.
+
+### Browser policies — `CH_POLICY_<Name>`
+
+The Chrome and Brave images turn any `CH_POLICY_<Name>=<value>` variable into
+a [Chromium enterprise policy](https://chromeenterprise.google/policies/)
+before the browser starts. The value is JSON, so strings need quotes:
+
+```json
+{ "env": ["CH_POLICY_HomepageLocation=\"https://example.com\"", "CH_POLICY_BookmarkBarEnabled=true"] }
+```
+
+The policy applies to that session only. Values cannot contain spaces.
 
 ## Networking
 
