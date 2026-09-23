@@ -26,8 +26,8 @@ WebDriver driver = new RemoteWebDriver(
 driver.navigate().to("http://example.com/myfile.odt");
 ```
 
-Opera, Brave and Yandex download to `/home/selenium/Downloads` without a
-dialog already; the hub does not forward client `prefs` to them. See
+The same options work on Opera, Brave and Yandex, which also download to
+`/home/selenium/Downloads` without a dialog when none are set. See
 [Chromium browsers](/reference/browser-notes/#chromium-browsers).
 
 **Firefox (Java)**
